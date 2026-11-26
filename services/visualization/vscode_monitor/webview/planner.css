@@ -1,0 +1,195 @@
+/* services/visualization/vscode_monitor/webview/planner.css — Plan a Model (planner.js); VS Code's theme colours
+   everywhere, a theme hue per layer group (cards and bars), no inline styles (the webview CSP). */
+body { font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); color: var(--vscode-foreground);
+  background: var(--vscode-editor-background); padding: 0 16px 24px; }
+h2 { font-size: 15px; margin: 12px 0; } h2 small { font-weight: 400; opacity: .7; }
+button, select, input { font: inherit; color: var(--vscode-input-foreground); background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent); border-radius: 2px; padding: 2px 6px; }
+button { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); cursor: pointer; }
+/* menus as the panel's (the Done list's metric menu): the theme's dropdown colours, the open list too */
+select { color: var(--vscode-dropdown-foreground); background: var(--vscode-dropdown-background);
+  border-color: var(--vscode-dropdown-border, transparent); }
+select option, select optgroup { color: var(--vscode-dropdown-foreground);
+  background: var(--vscode-dropdown-listBackground, var(--vscode-dropdown-background)); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.note { opacity: .75; } .err { color: var(--vscode-errorForeground, #f14c4c); } .ok { color: var(--vscode-testing-iconPassed, #3fb950); }
+
+.planner { display: grid; grid-template-columns: var(--leftw, 240px) 9px minmax(min-content, 1fr); gap: 5px; align-items: start; }
+/* the splitter between the settings and the cards: drag it (or ← → when focused) to widen or narrow the settings */
+.splitter { align-self: stretch; min-height: 100%; cursor: col-resize; position: relative; outline: none; touch-action: none; }
+.splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: var(--vscode-widget-border, rgba(128,128,128,.35)); }
+.splitter:hover::before, .splitter:focus-visible::before, .splitter.dragging::before { left: 3px; width: 3px; background: var(--vscode-focusBorder, #3794ff); }
+.left { display: grid; gap: 8px; }
+.knob { display: grid; gap: 2px; } .knob span { font-weight: 600; font-size: 12px; }
+.knob input { width: 100%; box-sizing: border-box; }
+.knoberr { color: var(--vscode-errorForeground, #f14c4c); font-size: 11px; }
+.stat { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dashed var(--vscode-widget-border, rgba(128,128,128,.35)); padding: 2px 0; }
+.stat b { font-family: var(--vscode-editor-font-family); font-weight: 600; text-align: right; }
+.stat select, .stat input[type=number] { font-size: 12px; max-width: 150px; }   /* Input: the data entry's length, or the length typed */
+.idstate { font-size: 12px; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+/* Download: the formats and their settings (a graph job's export: block), then the button */
+.download { display: grid; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--vscode-widget-border, rgba(128,128,128,.35)); }
+.download .lbl { font-weight: 600; }
+.dlrow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; }
+.dlrow input[type=number] { width: 64px; }
+.dlrow input.wide { width: 140px; }
+/* a choice's own settings, shown only once it is chosen */
+.dlsub { display: grid; gap: 4px; margin-left: 14px; padding-left: 8px; border-left: 2px solid var(--vscode-widget-border, rgba(128,128,128,.35)); }
+.dlfold { display: grid; gap: 4px; }
+.dlhead { justify-self: start; background: none; border: 0; padding: 0; color: inherit; font-weight: 600; font-size: 12px; cursor: pointer; }
+.dlhead small { font-weight: 400; opacity: .7; pointer-events: none; }   /* a click on the count is the button's */
+.dlbody { display: grid; gap: 4px; margin-left: 12px; }
+/* Download, and beside it OK, Cancel, Reset while changes are recognised (the note over them) */
+.dlbuttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 6px; }
+.dlbuttons .wide { grid-column: 1 / -1; }
+
+/* minimum width: a card follows the window down to 360px and then stays; narrower, the page scrolls sideways */
+.stack { padding-left: 26px; }
+.stack.themed { background: var(--vscode-editor-background); color: var(--vscode-foreground); border-radius: 6px; padding-block: 6px; }
+.row { display: grid; grid-template-columns: minmax(360px, 1fr) 170px; gap: 10px; align-items: center; }
+/* Layer cards (the Download style on the page): the cards alone, no bar column */
+.row.nobar { grid-template-columns: minmax(360px, 1fr); }
+/* Scaled Sparkline on the page: the bars alone (index · bar · arguments), the layer legend at a corner */
+.sparknote { margin: 2px 0 6px; }
+.spark { display: grid; gap: 3px; }
+.sprow { display: grid; grid-template-columns: 34px 220px minmax(0, 1fr); gap: 8px; align-items: center; }
+.spidx { text-align: right; font-family: var(--vscode-editor-font-family); font-size: 11px; color: var(--vscode-descriptionForeground); }
+.spargs { font-size: 11px; opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+svg.spbar rect { stroke: none; fill: var(--g); }
+svg.spbar line.grid, svg.sparkland line.grid { stroke: var(--vscode-widget-border, rgba(128,128,128,.35)); stroke-width: 1; stroke-dasharray: 2 3; }
+svg.sparkland rect { stroke: none; fill: var(--g); }
+svg.sparkland line.axis { stroke: var(--vscode-descriptionForeground); stroke-width: 1; }
+svg.sparkland text { fill: var(--vscode-descriptionForeground); font-size: 10px; font-family: var(--vscode-editor-font-family); }
+svg.sparkland text.sparg { font-size: 9px; }
+.splegend { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 11px; padding: 2px 0; }
+.splegend.right { justify-content: flex-end; }
+.splegend .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--g); margin-right: 4px; vertical-align: -1px; }
+/* the scale over the bar column: a log axis with ticks, kept in view while the cards scroll */
+.axisrow { position: sticky; top: 0; z-index: 1; background: var(--vscode-editor-background); padding: 2px 0; }
+.scalecap { text-align: right; font-size: 11px; color: var(--vscode-descriptionForeground); }
+svg.scale line { stroke: var(--vscode-descriptionForeground); stroke-width: 1; }
+svg.scale text { fill: var(--vscode-descriptionForeground); font-size: 10px; font-family: var(--vscode-editor-font-family); }
+svg.bar line.grid { stroke: var(--vscode-widget-border, rgba(128,128,128,.35)); stroke-width: 1; stroke-dasharray: 2 3; }
+.card { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 5px; border-left: 5px solid; min-width: 0; color: var(--vscode-foreground);
+  background: color-mix(in srgb, var(--g) 22%, var(--vscode-editor-background)); border-color: var(--g); }
+.card .name { background: none; border: 0; padding: 0; font-weight: 700; color: inherit; font-family: var(--vscode-editor-font-family); }
+.card small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .8; }
+.card .out { margin-left: auto; font-family: var(--vscode-editor-font-family); white-space: nowrap; }
+/* no-wrap: the name, the shape and ▲ ▼ × keep their size and line at any width; only the arguments' summary shrinks */
+.card .name, .card .tag, .card .out { flex: none; white-space: nowrap; }
+.card small { flex: 1 1 0; min-width: 0; }
+.card .acts { flex: none; display: inline-flex; white-space: nowrap; }
+.card .acts button { padding: 0 4px; background: transparent; border: 0; color: inherit; }
+.card .x { color: var(--vscode-errorForeground, #f14c4c); font-weight: 700; }
+.card.bad { outline: 2px solid var(--vscode-errorForeground, #f14c4c); }
+.tag { font-size: 10px; padding: 0 6px; border-radius: 999px; border: 1px solid var(--warn); color: var(--warn); }
+/* the + sits in the gap between two cards, just outside their left edge; its layer menu opens in that gap */
+.plusrow { position: relative; height: 10px; } .plusrow.open { height: auto; margin: 3px 0; }
+.plus { position: absolute; left: -20px; top: 50%; transform: translateY(-50%); padding: 0 2px; line-height: 1;
+  font-size: 15px; font-weight: 700; opacity: .8; background: none; border: 0; color: var(--vscode-foreground);
+  transition: color .12s, text-shadow .12s; }
+.plus:hover, .plus:focus { opacity: 1; outline: none; color: var(--vscode-focusBorder, #3794ff);
+  text-shadow: 0 0 4px var(--vscode-focusBorder, #3794ff), 0 0 10px var(--vscode-focusBorder, #3794ff); }
+.addlayer { font-size: 11px; }
+/* the selection: a tick box on each card; over the cards Select all, the count, Delete and Edit N layers */
+.selbar { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; }
+.selbar small { opacity: .75; }
+.selall { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+button.danger { color: var(--vscode-errorForeground, #f14c4c); }
+.card .sel { flex: none; margin: 0; padding: 0; }
+.card.picked { outline: 1px solid var(--vscode-focusBorder, #3794ff); }
+.args.bulk { margin-left: 0; }
+.args { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 2px 0 8px 14px; padding: 8px;
+  border: 1px solid var(--vscode-widget-border, rgba(128,128,128,.35)); border-radius: 5px; }
+.arg { display: grid; gap: 2px; font-size: 11px; } .arg.req span::after { content: " *"; color: var(--warn); }
+
+/* one theme hue per layer group (--g): the card's edge, a shade of it as its fill, and its bar; --tf-<group> is the
+   Download theme's colour, set on the cards (.stack) once a theme is chosen there */
+:root { --warn: var(--vscode-editorWarning-foreground, #cca700); }
+.g-convolution { --g: var(--tf-convolution, var(--vscode-charts-blue, #3794ff)); }
+.g-pooling { --g: var(--tf-pooling, var(--vscode-charts-orange, #d18616)); }
+.g-dense { --g: var(--tf-dense, var(--vscode-charts-purple, #b180d7)); }
+.g-normalization { --g: var(--tf-normalization, var(--vscode-charts-green, #89d185)); }
+.g-dropout { --g: var(--tf-dropout, var(--vscode-descriptionForeground, #8b949e)); }
+.g-shape { --g: var(--tf-shape, var(--vscode-terminal-ansiMagenta, #bc3fbc)); }
+.g-recurrent { --g: var(--tf-recurrent, var(--vscode-charts-red, #f14c4c)); }
+.g-attention { --g: var(--tf-attention, var(--vscode-terminal-ansiCyan, #11a8cd)); }
+.g-merge { --g: var(--tf-merge, var(--vscode-charts-yellow, #cca700)); }
+.g-other { --g: var(--tf-other, var(--vscode-charts-yellow, #cca700)); }
+svg.bar rect { stroke: none; fill: var(--g); }
+
+/* the trace lines: under each card, what that layer makes of one attack trace (drawn top to bottom when it arrives) */
+.tracerow { margin: 1px 0 4px; }
+svg.trace { width: 100%; height: 28px; display: block; }
+svg.trace polyline { fill: none; stroke: var(--g); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+svg.trace line.zero { stroke: var(--vscode-widget-border, rgba(128,128,128,.35)); stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+.tracecap { font-size: 10px; color: var(--vscode-descriptionForeground); font-family: var(--vscode-editor-font-family); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tracenote, .tracetop { font-size: 12px; margin: 4px 0; }
+.g-input { --g: var(--tf-input, var(--vscode-foreground)); }
+.observe { justify-self: start; }
+/* Visualise: the model's unsaved changes under its model_id, with OK / Cancel / Reset (the panel's bar) */
+.pending { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 5px;
+  border: 1px solid var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--vscode-editor-background)); }
+.pending span { flex: 1 1 100%; font-size: 12px; }
+svg.trace polygon.band { fill: var(--g); fill-opacity: .22; stroke: none; }
+.faint { font-size: 11px; opacity: .6; line-height: 1.35; }
+ul.tracefaint { margin: 0 0 6px; padding-left: 16px; max-width: 72ch; }
+ul.tracefaint li { margin: 1px 0; } ul.tracefaint b { font-weight: 700; }
+/* Show Key Recovery: the run's recorded attacks */
+.recovery { margin: 0 0 10px; }
+table.kr { border-collapse: collapse; font-size: 12px; margin: 2px 0 6px; }
+table.kr th, table.kr td { text-align: left; padding: 1px 10px 1px 0; border-bottom: 1px dashed var(--vscode-widget-border, rgba(128,128,128,.35)); }
+table.kr th { font-weight: 600; color: var(--vscode-descriptionForeground); }
+table.kr td { font-family: var(--vscode-editor-font-family); }
+/* Recovered: ✓ a clear green, ✗ a clear red, each bold on a light tint of its colour */
+table.kr td.ok { color: var(--vscode-charts-green, #3fb950); font-weight: 700;
+  background: color-mix(in srgb, var(--vscode-charts-green, #3fb950) 18%, transparent); }
+table.kr td.err { color: var(--vscode-charts-red, #f14c4c); font-weight: 700;
+  background: color-mix(in srgb, var(--vscode-charts-red, #f14c4c) 14%, transparent); }
+.span2 { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; align-items: center; }
+.span2 input { width: 100%; box-sizing: border-box; }
+.card.ro { cursor: default; }
+.card.ro .name { font-weight: 700; font-family: var(--vscode-editor-font-family); flex: none; white-space: nowrap; }
+.trained { display: grid; gap: 4px; padding: 8px; border: 1px solid var(--vscode-focusBorder, #3794ff); border-radius: 5px; }
+.trained small { opacity: .8; }
+
+.ask { border: 1px solid var(--warn); border-radius: 5px; padding: 8px 10px; margin: 8px 0; }
+.ask button { margin-right: 6px; }
+.preview { font-family: var(--vscode-editor-font-family); background: var(--vscode-textCodeBlock-background, rgba(128,128,128,.12));
+  padding: 8px 10px; border-radius: 5px; overflow-x: auto; }
+
+/* Activation per layer: a fold of rows, each layer that can carry one with its own menu; edited: its own */
+.actlayers { display: grid; gap: 3px; }
+.acthead { justify-self: start; background: none; border: 0; padding: 0; color: inherit; font-weight: 600; cursor: pointer; }
+.acthead small { font-weight: 400; opacity: .7; pointer-events: none; }
+.actrow { display: grid; grid-template-columns: minmax(0, 1fr) 92px; align-items: center; gap: 6px; font-size: 11px; margin-left: 8px; }
+.actrow span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actrow span { font-family: var(--vscode-editor-font-family); }
+.actrow.own span, .actrow.chg span { color: var(--warn); }
+.actrow small { opacity: .8; }
+
+/* Block Pattern: one block's layer kinds as chips (◀ ▶ move, × out), + adds a kind */
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 2px; }
+.chip { display: inline-flex; align-items: center; gap: 1px; padding: 1px 3px; border-radius: 4px; border-left: 3px solid var(--g);
+  background: color-mix(in srgb, var(--g) 18%, var(--vscode-editor-background)); font-family: var(--vscode-editor-font-family); font-size: 11px; }
+.chip-conv { --g: var(--tf-convolution, var(--vscode-charts-blue, #3794ff)); }
+.chip-norm { --g: var(--tf-normalization, var(--vscode-charts-green, #89d185)); }
+.chip-pool { --g: var(--tf-pooling, var(--vscode-charts-orange, #d18616)); }
+.chip button { background: none; border: 0; padding: 0 2px; color: inherit; opacity: .7; cursor: pointer; font-size: 10px; }
+.chip button:hover { opacity: 1; }
+.chip .x { color: var(--vscode-errorForeground, #f14c4c); }
+.chips .arrow { opacity: .55; font-size: 10px; }
+.chips select { width: 44px; }
+/* Pooling per block: a row per block, its type and window */
+.poolrow { display: grid; grid-template-columns: minmax(0, 1fr) 70px 46px; align-items: center; gap: 6px; font-size: 11px; margin-left: 8px; }
+.poolrow.own span, .poolrow.chg span { color: var(--warn); }
+.actall span { font-style: italic; }
+
+/* Visualise: the Configuration Change bar at the top of the settings; Add The Model asks its model_id under it */
+.pending.config { flex-wrap: wrap; }
+.pending.config .addask { flex: 1 1 100%; display: grid; gap: 4px; }
+.pending.config .askbtns { display: flex; gap: 6px; }
+.pending.config .steps { display: inline-flex; gap: 4px; }
+.preview .mk { color: var(--warn); font-weight: 600; }

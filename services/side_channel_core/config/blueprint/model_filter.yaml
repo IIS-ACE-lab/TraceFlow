@@ -1,0 +1,85 @@
+# services/side_channel_core/config/blueprint/model_filter.yaml
+#
+# Find the trained models of a project that have given parameters:
+#
+#   make find_model ENV=dev PROJECT=<project>                      # this file
+#   make find_model ENV=dev PROJECT=<project> FILTER=config/x.yaml # another filter
+#
+# The filter reads artifacts/run_map.jsonl and writes the matching model
+# names to artifacts/filtered_models.yaml (overwritten every run), so they
+# can be copied into a graph job's `models` list. Metrics are not looked at:
+# models are chosen for the traits they were trained with.
+#
+# A parameter path is looked up, in this order, in:
+#   1. the run_map entry        env, status, model_id, trial_index, selection_source, run_session_id, ...
+#   2. its run_registry entry   batches, batch_ids, started_at, finished_at, status_reason, key_recovered, ...
+#   3. its sweep point          model.*  (architecture, architecture_args.layers, ...)
+#                               trainer.* (epochs, batch_size, optimizer.type, optimizer.learning_rate, ...)
+#                               sca.*     (leakage_model, attack_byte, key_enumeration.enabled, ...)
+#   4. the training snapshot    data.*, cross_validation.*, perform_attack.*, evaluation.*, seed, ...
+# so any key of the resolved experiment config works. `*` in a path expands
+# a list (model.architecture_args.layers.*.Conv1d.kernel_size); a number
+# indexes it (layers.0.Conv1d).
+#
+# Operators (exactly one per condition):
+#   equals, not_equals          any value              in, not_in       list of values
+#   equals: "a|b"               any of a, b (= in: [a, b], in that order); not_equals: "a|b" = not_in
+#   contains: "a|b"             contains a or b (also [a, b]), in that order: batches contains "fig6|fig7"
+#   gt, gte, lt, lte            number                 between          [low, high]
+#   matches                     regular expression     contains         substring, or list member
+#   exists                      true | false           count            N, or {min: N, max: M} (list length)
+# quantifier: any | all  (for paths with `*`: does any value satisfy the operator, or every one)
+#
+# Order: the model names follow the `in:` lists below, in the order the lists
+# name their values, the first condition first (epochs in: [10, 25, 50] lists
+# the 10-epoch runs first). Runs the lists do not tell apart keep their
+# training order (run_map.jsonl).
+#
+# Batches: the runs made together, e.g. by `make experiment QUEUE=fig6`, or
+# labelled later with `make batch_label BATCH=fig6`, carry `batches: [fig6, ...]`:
+#   - path: batches
+#     contains: fig6
+#   (several batches: contains: "fig6|fig7")
+
+model_filter:
+  match:             # all = every condition must hold | any = at least one
+  status:           # only finished runs; `any` = every status
+  env:              # null = the ENV of the make call; `any` = every environment
+  where:
+    - path: 
+      contains: 
+
+  # where:
+    # - path: batches                 # the batch label
+    #   contains: fig6
+      
+    # - path: trainer.epochs
+    #   in: [100]  # a list of allowed values needs in:, not equals:
+
+    # - path: trainer.batch_size
+    #   in: [200]
+
+    # - path: trainer.optimizer.learning_rate
+    #   between: [1.0e-6, 1.0e-3]
+
+    # - path: validation.rank_step
+    #   equals: 1
+
+    # - path: model_id
+    #   matches: "CNN_base|CNN_base_conv2|MLP_.*"     # a regular expression over model ids
+    # - path: model.architecture_args.layers.*.Conv1d.kernel_size
+    #   equals: 11                        # any Conv1d layer with kernel 11
+    # - path: model.architecture_args.layers
+    #   count: {min: 10}                  # deep models
+    # - path: trainer.epochs
+    #   gte: 50
+    # - path: cross_validation.enabled
+    #   equals: true
+    # - path: sca.key_enumeration.enabled
+    #   equals: false
+    # - path: data.name
+    #   equals: "dpav4|aes_hd"
+    # - path: trainer.optimizer.scheduler.type
+    #   not_equals: none
+    # - path: run_session_id
+    #   equals: "20261005T053714Z-1"

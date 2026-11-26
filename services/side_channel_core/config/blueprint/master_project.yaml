@@ -1,0 +1,74 @@
+# services/side_channel_core/config/blueprint/master_project.yaml
+# One project's entry of master.yaml's `project:` list. The TraceFlow Monitor's Master Control →
+# Add a Project writes it with the name asked (name and root; description empty), then copies the
+# ten blueprint files to projects/<name>/config/ (make scaffold). Not a project config: scaffold
+# never copies it. The scripts, extra_configs (all but import, the model-import list) and
+# distributed_override join every run's hash: keep them as they are.
+name: "MY_PROJECT"
+description: ""
+root: "MY_PROJECT/"            # relative to TraceFlow/projects/
+auto_search:
+  enabled: false
+  config: "config/auto_search.yaml"
+  hard_replace_params: true    # true: auto_search.yaml replaces the params.yaml fields it sets; false: fills missing ones only
+auto_mlops:                    # the MLOps plug-in (services/mlops): off unless enabled
+  enabled: false
+  config: "services/mlops/config/auto_mlops.yaml"
+  hard_replace_params: true    # true: its model / trainer replace params.yaml's; false: fill missing ones only
+params: "config/params.yaml"
+exp_rerun:
+  path:   "artifacts/{{env}}/generated_models/{{model_name}}/rerun/{{timestamp}}_trial_{{trial}}"
+  repeat: 1
+print_config: false
+use_core_src: True             # import services/side_channel_core/src/*.py
+code_dir: src                  # with use_core_src: false, look under <root>/src/
+logs:   artifacts/logs/
+models: artifacts/models/
+metrics: artifacts/metrics/
+scripts:                       # join the run hash: keep them as they are
+  train:        "src/sca/train.py"
+  model:        "src/core/model.py"
+  test:         "src/sca/test.py"
+  data_loader:  "src/sca/ascad_data_loader.py"
+env_configs:
+  dev:     "config/dev.yaml"
+  staging: "config/staging.yaml"
+  prod:    "config/prod.yaml"
+distributed_override:
+  use: False
+  num_gpus: 1
+extra_configs:
+  graph:  "config/graph_config.yaml"
+  test: "config/test_config.yaml"
+  import: "config/import_config.yaml"   # make import (utils/model_import.py); not in any run's hash
+visualization:
+  clearml:                     # uploads the runs to ClearML (services/visualization/clearml)
+    enabled: false
+    scope: "global"            # global (app.clear.ml) | local (self-hosted): the profile used
+    fail_fast_on_unreachable_api: true
+    profiles:
+      global:
+        web_url: "https://app.clear.ml"
+        api_url: "https://api.clear.ml"
+        files_url: "https://files.clear.ml"
+        verify_certificate: true
+        access_key_name: "CLEARML_GLOBAL_API_ACCESS_KEY"
+        secret_key_name: "CLEARML_GLOBAL_API_SECRET_KEY"
+        clearml_env_file: "secrets/clearml_global.env"
+        healthcheck_enabled: true
+        healthcheck_path: "/debug.ping"
+        healthcheck_timeout_sec: 5.0
+      local:
+        web_url: "http://127.0.0.1:8080"
+        api_url: "http://127.0.0.1:8008"
+        files_url: "http://127.0.0.1:8081"
+        verify_certificate: true
+        access_key_name: "CLEARML_LOCAL_API_ACCESS_KEY"
+        secret_key_name: "CLEARML_LOCAL_API_SECRET_KEY"
+        clearml_env_file: "secrets/clearml_local.env"
+        healthcheck_enabled: true
+        healthcheck_path: "/debug.ping"
+        healthcheck_timeout_sec: 5.0
+  graph_manager:
+    enabled: true
+    config: "config/graph_config.yaml"

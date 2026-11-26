@@ -1,0 +1,2 @@
+<!-- services/visualization/vscode_monitor/brand/traceflow-mark-light.svg: the TraceFlow mark (a power trace running into a forward chevron) for light backgrounds -->
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#1F2328" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2.5l1.5-4 2 8 2-11 2 10 1.5-4H15"/><path d="M17 7l5 5-5 5"/></svg>

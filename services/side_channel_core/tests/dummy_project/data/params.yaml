@@ -1,0 +1,183 @@
+# services/side_channel_core/config/params.yaml
+
+# ── REPRODUCIBILITY & ENVIRONMENT ─────────────────────────────
+seed: 42
+device: "cuda"
+num_workers:   # number of workers for data loading
+    train: 0
+    val: 0
+monitor_interval: 1
+# ── DATASETS ──────────────────────────────────────────────────
+data:
+  - name: ascad
+    #alias: "ascad_full"                # optional, defaults to `name`
+    data_split: "0.65:0.25:0.10"                 # splits ASCAD.h5 → [train.h5, val.h5, test.h5]
+    debug_h5_inspect: True  # or false to mute later
+    database: "services/side_channel_core/data/ASCAD/ATMEGA_AES_v1/ATM_AES_v1_fixed_key/ASCAD_data/ASCAD_databases/ASCAD.h5"
+    multilabel:       0                      # 0=single,1=full‐multilabel,2=no‐permind
+    # control your desync. desync → how much random shift (“jitter”) to add to each slice; 0 means “exactly aligned.”
+    profiling_desync: 0
+    attack_desync:    0
+    # you can choose either a range _or_ an explicit list:
+#    profiling_range: [0, 50000]
+#    attack_range:    [50000, 60000]
+#    target_points: [45400, 46100] 
+
+#
+    # profiling = first 50k inside Profiling_traces
+    profiling_range: [0, 50000] #Profiling_traces: (50 000, 700)
+
+    # attack    = first 10k inside Attack_traces
+    attack_range:    [0, 10000] #Attack_traces: (10 000, 700)
+
+    target_range: [0, 700]   # grab all 700 points
+
+
+
+#How to get an attack split, if you want one back
+#    profiling_index:
+#      start: 0
+#      end:   50000
+#      step:  1
+#    attack_index:
+#      start: 50000
+#      end:   60000
+#    target_points:                    # pick points 45400…46100 inclusive
+#      start: 45400
+#      end:   46100
+#
+#  - name: foo
+#    # alias omitted, so `dataset_alias == "foo"`
+#    database: "/whatever/foo/foo.h5"
+#    multilabel: 1
+#    # or explicit lists:
+#    profiling_index: [0, 100, 200, 300, 400]
+#    attack_index:    [1000, 1100, 1200]
+#    target_points:   [45000, 45050, 45100]
+
+# ── MODEL SETTINGS ─────────────────────────────────────────────
+# services/side_channel_core/config/architectures/cnn_best2.yaml
+
+model:
+  layers:
+  - Conv1d:
+      activation: relu
+      in_channels: 1
+      kernel_size: 11
+      out_channels: 64
+      padding: 5
+      stride: 2
+  - Pooling:
+      dim: 1
+      kernel_size: 2
+      type: avg
+  - Conv1d:
+      activation: relu
+      in_channels: 64
+      kernel_size: 11
+      out_channels: 128
+      padding: 5
+  - Pooling:
+      dim: 1
+      kernel_size: 2
+      type: avg
+  - Conv1d:
+      activation: relu
+      in_channels: 128
+      kernel_size: 11
+      out_channels: 256
+      padding: 5
+  - Pooling:
+      dim: 1
+      kernel_size: 2
+      type: avg
+  - Conv1d:
+      activation: relu
+      in_channels: 256
+      kernel_size: 11
+      out_channels: 512
+      padding: 5
+  - Pooling:
+      dim: 1
+      kernel_size: 2
+      type: avg
+  - Conv1d:
+      activation: relu
+      in_channels: 512
+      kernel_size: 11
+      out_channels: 512
+      padding: 5
+  - Pooling:
+      dim: 1
+      kernel_size: 2
+      type: avg
+  - Flatten: {}
+  - Linear:
+      activation: relu
+      in_features: 5120
+      out_features: 4096
+  - Linear:
+      activation: relu
+      in_features: 4096
+      out_features: 4096
+  - Linear:
+
+      in_features: 4096
+      out_features: 256
+
+
+
+# ── TRAINING HYPERPARAMETERS ────────────────────────────────────
+trainer:
+  monitor_metric: 
+  epochs:           10 
+  batch_size:       [32, 64, 16]
+  loss_reduction: mean   # or "sum", or "none" #will be operated upon cross_entropy computation. 
+  early_stopping:   True
+  patience:         3          # Number of epochs to wait without improvement before stopping
+  min_delta:        0.001      #Minimum improvement in the metric to qualify as "better"
+  optimizer:        Adam
+  lr:               1e-4
+  weight_decay:     1e-3
+  scheduler:
+    type: StepLR
+    args:
+      step_size: 5
+      gamma:     0.4
+
+# ── METRICS YOU WANT LOGGED ─────────────────────────────────────
+metrics_to_log:
+  - cross_entropy #aka loss. we have reduction=mean
+  - accuracy
+  - guessing_entropy
+  - mean_rank
+  - variance_rank
+  - {"rank_k_success": {"k": 5}}
+  - {"top_k_accuracy": {"k": 5}}
+# NEW:
+#   - median_rank
+#   - { rank_percentile: { p: 25 } }
+#   - { rank_percentile: { p: 75 } }
+#   - normalized_mean_rank
+#   - normalized_variance_rank
+#   - auc_ge
+# ###  - sr_curve   #Make sure not to include sr_curve itself in metrics_to_log—only include auc_sr, which is a single float. That way, when append_metrics_row(...) builds a CSV row, it sees only floats/ints and writes them cleanly.
+#   - auc_sr
+#   - time_to_recover
+#   - { ge_reduction_rate: { window: 10 } }
+
+
+# ── RUN & ARTIFACT PATHS ────────────────────────────────────────
+paths:
+  # you can now refer to both {{model_name}} and {{dataset_alias}}
+  artifacts_root: "artifacts/generated_models/{{model_name}}"
+  params:  "config/params.yaml"
+  data_out:    "artifacts/generated_models/{{model_name}}/data/{{dataset_alias}}.h5"
+  test_data:      "artifacts/generated_models/{{model_name}}/data/test.h5"
+  model_out:   "artifacts/generated_models/{{model_name}}/model"
+  logs:        "artifacts/generated_models/{{model_name}}/logs"
+  graphs:      "artifacts/generated_models/{{model_name}}/graphs"
+  checkpoints: "artifacts/generated_models/{{model_name}}/checkpoints"
+  params_out:  "artifacts/generated_models/{{model_name}}/config/{{model_name}}_params.yaml"
+  data:        "artifacts/generated_models/{{model_name}}/data"
+  metrics:     "artifacts/generated_models/{{model_name}}/metrics"

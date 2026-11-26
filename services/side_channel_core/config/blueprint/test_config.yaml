@@ -1,0 +1,75 @@
+# services/side_channel_core/config/blueprint/test_config.yaml
+#
+# Test trained models of this project again.
+#
+# Two kinds of test, both on a trained model of this project (status DONE, the
+# ENV you run with), from its own training snapshot
+# artifacts/<env>/generated_models/<model>/config/<model>_params.yaml:
+#
+# 1. The recorded test: the attack the model was trained with.
+#      make test ENV=dev PROJECT=<project>                       # the models listed below
+#      make test ENV=dev PROJECT=<project> MODEL=model_a,model_b # these instead
+#    (panel: the Done list -> Retest). Its perform_attack.test is the snapshot's;
+#    with attack_times: 0 there is nothing to attack and the test is SKIPPED.
+#    The result replaces the model's recorded test: its test metric rows,
+#    metrics/key_recovery/test.json and its fields in artifacts/test_registry.json.
+#
+# 2. An external test: the same trained model, attacked with the settings below.
+#      make test ENV=dev PROJECT=<project> EXTERNAL=1
+#      make test ENV=dev PROJECT=<project> MODEL=model_a EXTERNAL=1
+#    (panel: Configs -> test_config.yaml -> Test, or TESTS -> a model -> Test).
+#    Only perform_attack.test.{attack_times, shuffle, attack_distribution},
+#    perform_attack.attack_step and perform_attack.ge_thresholds may change;
+#    everything else, and the model's identity, stays the snapshot's (it is
+#    checked against its model hash first). test_request.perform_attack is
+#    every model's setting; test_request.models.<name>.perform_attack is one
+#    model's own, over it. attack_times must be >= 1.
+#    The reports go to the run's test folder (paths.test):
+#      artifacts/<env>/generated_models/<model>/test/<model_hash>_et_<index>/
+#        test_settings.json, metrics/attack_metrics/, metrics/key_recovery/test.json, logs/
+#    and the outcome to artifacts/test_registry.json, under the model's hash:
+#      external_tests: {<model_hash>_et_<index>: {index, settings, settings_id,
+#                       status, status_reason, key_recovered, true_key,
+#                       recovered_key, recovered_key_rank, finished_at, runs, ...}}
+#    status_reason says why it ended: "completed: the key is recovered
+#    (true-key rank 1)", or what failed ("checkpoint missing or corrupt: ...",
+#    "data missing: ...", "system failure: GPU: ...", ...). settings_id is a hash
+#    of the effective attack settings, the tested checkpoint policy and the
+#    checkpoint's SHA-256: the same settings on the same weights update their
+#    own record (results, status_reason, finished_at, runs); different
+#    settings append a new record with the next index. The recorded test
+#    (1) is never touched, and graph jobs and the model judge read only it.
+#
+# Each name is looked up in artifacts/model_name_map.json (model hash) and
+# artifacts/run_map.jsonl (the trained run). params.yaml is not read. Weights
+# are not saved again: testing does not change them. A test report records
+# the checkpoint it loaded and its SHA-256 (test.json -> model.checkpoint_sha256).
+#
+# Loaded through master.yaml -> project -> extra_configs.test.
+
+test_request:
+  # A name from artifacts/done_model_names.yaml (or a model hash), or a list:
+  #   model:
+  #     - model_a
+  #     - model_b
+  model:
+    []
+  # External tests only: the device they run on, cpu | cuda (empty: the snapshot's), e.g. cpu beside a training on
+  # the GPU. A set device joins the test's settings (a record of its own); the model hash is not changed.
+  device:
+  # External tests only: the attack every listed model gets.
+  # SCA-standard guessing entropy on the attack set (Wu, Perin & Picek 2021):
+  perform_attack:
+    test:
+      attack_times: 
+      shuffle: 
+      attack_distribution: 
+    attack_step:           # a rank point every attack_step traces (one value)
+    ge_thresholds:         # rank 1: key recovered (rank base 1)
+  # One model's own external settings, over the ones above:
+  # models:
+  #   model_a:
+  #     perform_attack:
+  #       test:
+  #         attack_times: 10
+  models: {}

@@ -1,0 +1,67 @@
+# services/side_channel_core/infra/environment/requirements.txt
+#
+# Python 3.12 requirements of TraceFlow, shared by the host `sca` conda env
+# (setup_sca_env.sh, requirements.yaml) and the training image
+# (deployment/docker/Dockerfile, /venv on Ubuntu 24.04's Python 3.12).
+#
+# Only distributions the code imports (services/, projects/) or the repo's
+# tools run (pytest, make lint, pyflakes). Their own dependencies are left to
+# pip. Every pin publishes a CPython 3.12 manylinux x86_64 wheel or is pure
+# Python.
+#
+# PyTorch is NOT pinned in this file: its CUDA 12.8 wheels come from the PyTorch index, in the
+# same pip call as this file, so that one resolution installs every pin once:
+#   pip install -r requirements.txt \
+#       torch==2.9.1+cu128 torchvision==0.24.1+cu128 torchaudio==2.9.1+cu128 \
+#       --extra-index-url https://download.pytorch.org/whl/cu128
+# (same pins and call in setup_sca_env.sh, requirements.yaml and the Dockerfile).
+
+# Numerics and data
+numpy==2.2.6
+pandas==2.2.3
+scikit-learn==1.7.2
+h5py==3.14.0
+scipy==1.18.1          # .mat sources of the AES_RD converter (src/sca/converters/aes_rd.py)
+captum==0.9.0          # PyTorch's attribution library: gradient and gradient x input figures (services/graph_manager/explain.py);
+                       # 0.8.0 pinned numpy<2.0 and could not resolve with numpy 2 (image build of 2026-10-16)
+tqdm==4.67.1
+
+# Deep learning (Keras 3 runs on the torch backend, KERAS_BACKEND=torch).
+# keras is pinned on purpose; keep it at 3.12.4.
+keras==3.12.4
+
+# Hyper-parameter search (services/mlops)
+optuna==4.6.0
+
+# Artifact seals (utils/seal.py): Ed25519 signatures over every artifact
+cryptography==50.0.2
+
+# Run names: utils/model_naming.py calls the funny-words CLI for every model_name
+# (a command, not an import, so an import scan does not see it).
+funny-words==1.7
+
+# Configuration, CLI and logging
+PyYAML==6.0.1
+Jinja2==3.1.5
+click==8.4.1
+typer==0.25.1
+rich==14.0.0
+Pygments==2.19.1
+pytz==2025.1
+
+# The status page's QR codes (services/visualization/server/status.py, the panel's share icon)
+segno==1.6.6
+psutil==7.0.0
+
+# Plots and reports (graph manager)
+matplotlib==3.10.9
+pillow==11.1.0
+pypdf==6.19.0
+
+# Experiment tracking (services/visualization/clearml, off unless enabled)
+clearml==1.18.0
+
+# Tests and static checks (make lint runs pylint)
+pytest==8.3.5
+pylint==4.1.3
+pyflakes==4.0.3

@@ -1,0 +1,444 @@
+# services/side_channel_core/config/blueprint/graph_config.yaml
+#
+# TraceFlow GraphManager jobs.
+#
+# Run one job:   make ENV=dev PROJECT=<project> GRAPH_ID=<id> graph
+# Output:        projects/<project>/graphs/jobs/job_<id>_<name>/
+#
+# ---------------------------------------------------------------------------
+# PLOT TYPES
+# ---------------------------------------------------------------------------
+# A job takes only a plot_type that changes how its metric is drawn
+# (graph_manager/metric_router.py plot_types_for; any other is refused):
+#   per-epoch scalars (loss, accuracy, key_rank, guessing_entropy, fit time, ...)
+#     solo     auto | line | line_scatter | scatter | step | bar
+#     overlay  auto | line | line_scatter | scatter | step | bar | barh | heatmap
+#   attack curves (mean_attack_rank_curve, sr_curve, full_ranks, per_attack_curves)
+#     overlay, or solo with array_epoch.mode overlay: auto | line | line_scatter | scatter | step
+#     solo     auto (drawn by its own layout)
+#   final_ranks, LDD, fold_rank_curves, key_candidate_scores, model_explanation: auto
+# auto : the same as line.  line_scatter : identical to line.
+# scatter : points only.  step : a stepped line.  bar : vertical bars.
+# barh : horizontal bars, first model on top, one value per model.
+# heatmap : a model per row, a cross-validation fold per column: a key_recovery
+#   scalar of process validation (e.g. stable_rank1_trace) in each fold's report at
+#   the job's epoch, on style.colormap (a Matplotlib colormap, default viridis); a
+#   fold without a value is light grey with its final key rank, named in a legend.
+# ---------------------------------------------------------------------------
+# models
+# ---------------------------------------------------------------------------
+# Job 0 is the only automated job: its top_models list is rewritten by
+#   make judge ENV=<env> PROJECT=<project>
+# with the model-judge ranking. Every other job lists its models by hand.
+#
+# The names of all generated models are collected in
+#   projects/<project>/artifacts/done_model_names.yaml
+# (one entry per model, added when its training completes). Copy the ones
+# you want into a job's models list.
+#
+# ---------------------------------------------------------------------------
+# source: which metrics directory a job reads (per model)
+# ---------------------------------------------------------------------------
+# attack_metrics    metrics/attack_metrics            train | validation | test
+#     train      = final training (CV on: the full-profiling refit, evaluated
+#                  on the profiling traces each epoch)
+#     validation = held-out validation split (CV off only)
+#     test       = one-shot evaluation on the test traces
+# cross_validation  metrics/cross_validation/fold_NN  train | validation
+#     mean over folds per epoch / per trace, shaded +/- one std
+# key_recovery      metrics/key_recovery              validation | test
+#     test.json, validation_history.jsonl / validation_best.json
+#     (CV on: validation records are per fold, averaged per epoch)
+#
+# source says which records are read, processes which stage of them.
+# cross_validation is a source, never a process:
+#
+#   cross-validation curves source: cross_validation  processes: [validation]
+#       rank of the correct key on the held-out traces of each fold,
+#       mean over the folds: the model-selection evidence.
+#   training of the folds   source: cross_validation  processes: [train]
+#       loss, accuracy and fit time of the fold trainings, mean over folds
+#   final training          source: attack_metrics    processes: [train]
+#       the model trained on all profiling traces; its rank is measured on the
+#       traces it was trained on, so it is optimistic
+#   attack traces           source: attack_metrics    processes: [test]
+#       the final model on the test traces (data[].test_range)
+#
+# ---------------------------------------------------------------------------
+# combine: several processes as one series (an item of processes)
+# ---------------------------------------------------------------------------
+#   processes:
+#     - "train"
+#     - "validation"
+#     - combine:
+#         processes: ["train", "validation"]
+#         mode: "sum"          # sum | mean
+# Every item of processes is drawn: a name is that process, a combine item
+# the metric of its processes added (or averaged) epoch by epoch, inside
+# every fold first for source: cross_validation. The job above draws train,
+# validation and train+validation; list the combine item alone to draw only
+# the total. Example: fit_time_s of train plus validation is the total time
+# of an epoch.
+#
+# ---------------------------------------------------------------------------
+# metric: anything recorded in the history files can be plotted
+# ---------------------------------------------------------------------------
+# per epoch  accuracy, guessing_entropy, key_rank, success_rate,
+#            mean_accuracy (attack_metrics: the accuracy of that run over
+#            its traces; in the train rows the running accuracy of the
+#            epoch's training passes, not an evaluation; cross_validation:
+#            the mean over the folds),
+#            fit_time_s, mean_fit_time_s (the same value read two ways:
+#            one run has its own time, cross_validation the mean over the
+#            folds; likewise _h and _per_epoch),
+#            traces_to_ge_1, traces_to_ge_5, ... (only what metrics_to_log
+#            names is recorded, plus its dependencies, e.g. fit_time_s of
+#            mean_fit_time_{s}; the training loss is not: ask for cross_entropy)
+#            key_recovery: final_true_key_rank, final_ge, final_sr_at_1,
+#            first_rank1_trace, stable_rank1_trace, top1_top2_score_margin,
+#            recovered
+#            A process with one record per model (test) gives one bar per model.
+# per trace  mean_attack_rank_curve (GE vs traces), per_attack_curves
+#            (selected with array_epoch: latest | selected | overlay | summary)
+# per attack final_ranks (cross_validation: final rank of every fold)
+# solo only  fold_rank_curves      (cross_validation) every fold + fold mean
+#            key_candidate_scores  (key_recovery)     all 256 key guesses
+#
+# ---------------------------------------------------------------------------
+# One value per model as bars
+# ---------------------------------------------------------------------------
+# A model_overlay of a per-epoch scalar with
+#     array_epoch: {mode: "selected", epoch: 100}
+# keeps that epoch only and draws one bar per model (plot_type: bar | barh),
+# each in the colour the model has as a curve in an overlay of the same
+# models. With plot_type: barh, array_epoch: {mode: "latest"} keeps the last
+# epoch of each model instead (the final value, whatever the number of
+# epochs), e.g. for a fit time. The bar axis carries no tick
+# labels, only its own label from style.text_rules (empty: blank). With
+# legend.enabled: true the bars are named in a legend at legend.position,
+# one entry per bar in the bar's colour (legend.labels with mode: custom).
+#
+# Relative values (model_overlay only). Any scalar metric of the job (fit
+# time, accuracy, a loss, ...) divided by the same metric of one reference
+# run, read as the job reads its models, so the reference is 1.0 (dashed
+# line). Absolute speed depends on the GPU; ratios between runs of one
+# device do not. Empty or absent: the values as recorded.
+#     relative:
+#       rule: run        # run: the reference is one of the job's models
+#                        # anchor: any finished run of this ENV, listed or not
+#                        #   (e.g. the project's baseline: one scale for all jobs)
+#                        # probe: each run's time divided by its own device
+#                        #   probe (<run>/device.yaml (paths.device)), in probe steps,
+#                        #   comparable across devices; time metrics only, no where
+#       where:           # model_filter conditions; exactly one run must match
+#         - {path: trainer.batch_size, equals: 200}
+#       label: "batch size 200"   # optional; default built from where
+# The log names the reference run (name and hash); text_rules can print the
+# label with {relative_to}, e.g. x_label "fit time relative to {relative_to}".
+# With rule run or anchor a time metric is divided only between runs whose
+# device records agree (GPU, torch, CUDA, cuDNN, TF32 switches); a run without
+# a record is named in a warning. Every run writes <run>/device.yaml (paths.device) at the
+# start of training (services/side_channel_core/utils/device_record.py).
+#
+# metric_process (model_overlay of several per-epoch scalars): the process a
+# metric is read from instead of the job's; processes then lists one, the one
+# of the metrics the map leaves out. One figure, e.g. bars of the validation
+# accuracy and the training fit time, both relative to one run:
+#     metric: ["mean_accuracy", "mean_fit_time_{s}"]
+#     metric_process: {mean_fit_time_{s}: "train"}
+#     processes: ["validation"]
+# A model keeps its colour, a metric its hatch (solid, ////, ...).
+#
+# style.bar_values: a number format (".4f") for each bar's value at its end.
+# legend.position: below puts the legend under the x label, outside the axes; top /
+#   bottom inside the box at its top / bottom. A legend inside wider than the box
+#   tightens its marks and gaps, then shrinks to fit.
+# legend.columns: entries per legend row (default 1).
+# legend.anchor: [x, y], the legend's position point in the plot box (fractions).
+# style.figure.margins: {top, bottom, left, right} in inches: the plot box there, the
+#   page at its exact size; a facet row of equal heights and margins aligns.
+# faceting arrangement.fit: height (default) | width (every row the widest's width)
+#   | natural (every panel at its own size: one text size in all; SVG or PDF panels).
+# style.text_rules target colorbar_label: a heat map's colour-bar label ("" none).
+# style.heatmap: {limits: [low, high], colorbar, cell_values, row_groups}: a heat
+#   map's shared scale, its own colour bar, the cells' format, "group, item" rows.
+# faceting legend.colormap: {name, limits, label}: one spectrum above the entries.
+# style.series: a run's own colour and bar hatch, instead of its slot's;
+# legend.entries: the legend's own patches in place of one per series:
+#     style: {series: {run_a: {color: "C0", hatch: ""}, run_b: {color: "C0", hatch: "////"}}}
+#     legend: {entries: [{label: "N_max = 0"}, {label: "N_max = 100", hatch: "////"}]}
+# An entry with linestyle ("--") is a line: {label: "HW labels", color: black, linestyle: "--"}.
+# A series and an entry also take width (pt) and dashes ([on, off] pt): {width: 1.3, dashes: [6, 3]}.
+#
+# ---------------------------------------------------------------------------
+# legend.handle: the mark before each legend label
+# ---------------------------------------------------------------------------
+#   legend:
+#     handle: ["line", 2.0]   # [shape, thickness in pt]; leave out for the default
+# shape  "line"        a line of width thickness
+#        a marker      "o" circle, "s" square, "^" triangle, "D" diamond,
+#                      "*" star, "x", "+", "|", "_", ...  of size thickness
+#        a character   any other single character, e.g. "■" or "●", drawn
+#                      as text of size thickness
+# Every entry takes the colour of its curve or bar.
+#
+# ---------------------------------------------------------------------------
+# style.std_band: spread over the cross-validation folds
+# ---------------------------------------------------------------------------
+#   style:
+#     std_band:
+#       enabled: true   # default true
+#       alpha: 0.15     # opacity of the band, 0..1; default 0.15
+# With source: cross_validation every curve is the mean over the folds, and
+# enabled: true also loads the sample std over the folds and shades
+# mean - std .. mean + std in the colour of the line (error bars on bars).
+# enabled: false loads the mean only.
+#
+# ---------------------------------------------------------------------------
+# style.font: match the document the figure goes into
+# ---------------------------------------------------------------------------
+# family  e.g. "Latin Modern Roman", the OpenType design of LaTeX's default
+#         Computer Modern, with bold and italic. The graph manager registers it from
+#         the TeX installation (kpsewhich lmroman10-regular.otf). Without TeX
+#         Matplotlib warns and falls back to its default font.
+#         Also: "Latin Modern Sans", "Latin Modern Mono"; "serif" is DejaVu Serif.
+# sizes   e.g. the size commands of a 10 pt LaTeX class, in points:
+#           10  \normalsize  the text          base_size, title_size
+#            9  \small                         label_size
+#            8  figure captions               tick_size, legend_size
+#            7  \footnotesize
+#            5  \tiny
+#         Use the same values in the text_rules (e.g. title 10, axis labels 9,
+#         legend 8).
+# A size is the size on the page only when the figure is included at the
+# width it was drawn with (style.figure.width, default 6.4 in landscape /
+# 4.8 in portrait). A 6.4 in figure placed at a third of the 160 mm text
+# width is scaled by 0.31, and its 10 pt text prints at 3.1 pt. For text at
+# its true size, set style.figure.width to the width the figure has in the
+# document, e.g. 6.30 in for a 160 mm text width, 2.99 in for a 76 mm column.
+#
+# ---------------------------------------------------------------------------
+# Page of the saved figure
+# ---------------------------------------------------------------------------
+# style.figure.orientation  landscape (6.4 x 4.8 in) | portrait (4.8 x 6.4 in);
+#                           width / height in inches override it.
+# style.axes.x_limits       [min, max] of the x axis, e.g. [0, 600] to show the
+#                           first 600 traces; y_limits likewise. Default: the data.
+# style.axes.x_step         spacing of the x ticks, e.g. 20 for a tick every 20
+#                           traces; y_step likewise. Linear axes only.
+#                           Default: Matplotlib's ticks (whole epochs on an epoch axis).
+# style.axes.x_grid         draw only the points whose x is a multiple of it, e.g.
+#                           50 for a point every 50
+#                           traces. The run's curve is unchanged: a run at
+#                           validation.rank_step 1 draws exactly as one at 50.
+#                           Default: every recorded point.
+# style.axes.x_grid_first   true: also draw the first recorded point when it is
+#                           off x_grid, e.g. n = 1 of a run recorded at every
+#                           trace (rank_step = attack_step = 1), drawn at its
+#                           recorded x = 1. Needs x_grid. A run recorded every 50
+#                           traces has no n = 1 point. Default: false.
+# style.axes.x_margin       padding on each side, a fraction of the x_limits span
+#                           (Matplotlib's own default is 0.05); y_margin likewise.
+#                           Points outside x_limits are then not drawn. Default: 0.
+# export.margin            white border in inches (default 0.05). In every
+#                           format the page is the drawn figure plus this
+#                           margin: no paper size, no rotation.
+# export.formats           svg (the default, owner 2026-10-27) | png | pdf | eps.
+#                           SVG text is written as outlined glyphs: Latin Modern
+#                           in every viewer and in Inkscape (svg.sty).
+#
+# ---------------------------------------------------------------------------
+# faceting: finished graph files side by side in one figure
+# ---------------------------------------------------------------------------
+# Run one facet:  make ENV=dev PROJECT=<project> FACE_ID=<id> graph
+# Output:         projects/<project>/graphs/facets/facet_<id>_<name>/
+#
+# The faceting list is at the end of this file, after jobs.
+#   panels       each one has a file_id, the address of a file that a graph
+#                job already wrote (relative to projects/<project>/graphs/)
+#                and its orientation: landscape | portrait
+#   arrangement  mode: horizontal  one row, order from left to right
+#                      vertical    one column, order from top to bottom
+#                      grid        rows from top to bottom, each from left
+#                                  to right
+#                order: the file_ids, first to last (default: as listed);
+#                       a panel left out of it is not drawn. In a grid
+#                       write one inner list per row, rows may differ in
+#                       length:  order: [[1, 2], [3, 4, 5]]
+#                       A flat order with `columns: N` is cut into rows of N.
+#                each panel may carry its own label ({letter} {index} {roman} {file_id} {file})
+#                and label_position: bottom | bottom-left | bottom-right | top | top-left |
+#                top-right | left (beside the panel, e.g. stacked figures indexed I, II, ...)
+#   legend       enabled, position: top | bottom | right, columns, title,
+#                handle: [shape, thickness]: line | patch | marker | one character,
+#                mode: auto (the entries of the graph job of the first panel:
+#                its models, as its legend labels them) | custom (entries:
+#                [{label, color}], or labels: [...]). Entry i takes colour i of
+#                the colour cycle, the colour a graph job gives its i-th
+#                model, unless color is set.
+#   export       formats: svg (the default) | png | pdf, margin, png: {dpi}
+#                (also the dpi of a pdf that embeds png panels), svg: {sanitize,
+#                validate_xml, on_error}; an svg nests the panels' own SVGs
+#                (all vector), or embeds their PNGs where a panel has no SVG
+# Rows share panel_height; a panel keeps the proportions of its file.
+# text_rules (a facet's own, at its top level) targets: title | x_label |
+#   y_label | panel_label | legend_text
+#   panel_label text may use {letter} (a, b, ...), {index}, {file_id}, {file}.
+# PDF output places the panels' PDF files as vector graphics when the pypdf
+# package is installed (pip install pypdf); otherwise it embeds their PNGs.
+#
+#
+# Markers are a style setting, not a plot type: style.line.marker ("o", "none", ...)
+#   decides whether a line carries markers; line and line_scatter run the same code.
+# One value per model: a test result, or a per-epoch scalar with
+#   array_epoch: {mode: "selected", epoch: N} (barh: also mode "latest", the
+#   last epoch). With a full history per model barh falls back to a line.
+# Overlays of rank curves (mean_attack_rank_curve) are always lines; bar is ignored.
+# Fixed layouts that ignore plot_type:
+#   fold_rank_curves      grey line per fold plus the bold fold mean
+#   key_candidate_scores  bars over the 256 key guesses, true key highlighted
+#   single-model attack curves of a solo job: line
+#
+# ---------------------------------------------------------------------------
+# Attack budget and test of a job (graph_manager/trace_budget.py):
+#   trace_budget: B   the attack curves (mean_attack_rank_curve, per_attack_curves,
+#                     full_ranks, sr_curve*) drawn up to B traces, and final_ranks
+#                     read at B: the attacks of B traces each, since a B-trace attack
+#                     is the first B traces of the run's attack (the order is seeded).
+#                     B must be a recorded point of every run's curve. source:
+#                     attack_metrics. Empty: the curves as the run recorded them.
+#                     Unlike style.axes.x_limits, which hides points, it reads the
+#                     per-attack ranks at B.
+#   test: latest | budget | recorded | <index>   which test the test process is drawn
+#                     from: latest (empty too) the latest All test (the training's,
+#                     or a later Retest All / Test All); budget the latest Budget test;
+#                     recorded the training's own; <index> the run's test <index>
+#                     (<run>/test/<model_hash>_et_<index>/). Never an earlier test by
+#                     default: a later one replaces it in every figure.
+#
+# ---------------------------------------------------------------------------
+# Output policy:
+#   png -> quick inspection / dashboard preview
+#   pdf -> paper / LaTeX vector figure (no settings: vector)
+#   svg -> optional editable vector artifact (export.svg: sanitize, validate_xml, on_error)
+#   png -> export.png.dpi
+# text_rules: target, text, bold, italic, color, font {family, size}; no
+#   underline (Matplotlib cannot underline a text).
+# Do not use jpg for scientific graphs.
+
+jobs:
+
+  # ================================================================
+  # JOB 0: default (automated model list)
+  # Purpose:
+  #   Project overview: the test attack curve of the judged top models.
+  # Behavior:
+  #   top_models is rewritten by the model judge; this is the only automated job.
+  # Output:
+  #   Guessing entropy vs number of attack traces, one curve per model.
+  # ================================================================
+  - id: 0
+    name: 
+    type:   # "model_overlay" | "solo" | "process_overlay" | "model_explanation"
+    mode: 
+    enabled: 
+
+    source:   # "attack_metrics" | "cross_validation" | "key_recovery"
+    metric: 
+    plot_type: 
+
+    # Rewritten by: make judge ENV=<env> PROJECT=<project>
+    top_models:
+      []
+
+
+    processes:
+      []
+
+    array_epoch:
+      mode: 
+
+    output_file_name: 
+
+    export:
+      formats:
+        []
+      margin: 
+      save_raw_plot_data: 
+      png:
+        dpi: 
+      svg:
+        sanitize: 
+        validate_xml: 
+        on_error: 
+
+    legend:
+      enabled: 
+      position: 
+      handle: []  # [shape, thickness pt]: "line" | marker ("o", "s", ...) | one character
+      mode:   # "auto" uses the model name; "custom" uses labels below
+      labels:
+        {}
+
+    style:
+      font:
+        family: 
+        base_size: 
+        title_size: 
+        label_size: 
+        tick_size: 
+        legend_size: 
+      line:
+        width: 
+        marker: 
+        marker_size: 
+      grid:
+        enabled: 
+        alpha: 
+      axes:
+        x_scale: 
+        y_scale: 
+      text_rules: []        # the figure's texts (title, axis labels, legend text, tick labels): set in the panel, each a target
+
+
+# ======================================================================
+# FACETING
+#   make ENV=dev PROJECT=<project> FACE_ID=<id> graph
+# ======================================================================
+faceting:
+
+  # ================================================================
+  # FACET 1 (example): finished graph files side by side, e.g. mean rank next to
+  #   mean fit time. Run the graph jobs that write the panels first.
+  # ================================================================
+  - id: 1
+    name: 
+    enabled: false   # the example facet: drawn once its panels are filled and this is true
+    output_file_name: 
+    panel_height: 
+    spacing: 
+    panels:
+      - file_id: 
+        address: 
+        orientation: 
+        label: 
+        label_position:   # bottom | bottom-left | bottom-right | top | top-left | top-right | left
+    arrangement:
+      mode:      # horizontal | vertical | grid(one inner list per row, e.g. [[1, 2], [3, 4, 5]])
+      order: []  
+    legend:
+      enabled: 
+      position:   # top | bottom | right
+      caption:           # a line under the legend, in its font (e.g. "Fig. a")
+      columns:           # entries per legend row
+      handle: []         # [shape, thickness pt]: line | patch | marker ("o", "s", ...) | one character
+      mode:              # auto: the first panel's graph job's entries | custom: entries below
+      entries:            # entry i takes colour C(i-1), like the i-th model of a job
+        - label: 
+    export:
+      formats:
+        []
+      margin: 
+      png:
+        dpi: 
+    text_rules: []          # the facet's texts: set in the panel, each a target

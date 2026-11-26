@@ -1,0 +1,718 @@
+# services/mlops/config/auto_mlops.yaml
+
+version: 1.0
+mode: auto_sota   # auto_sota | evaluate_only | replay
+
+# ===============================================================
+# GLOBAL PATHS (plugin-owned)
+# ===============================================================
+paths:
+  auto_params:              "artifacts/{{env}}/generated_models/{{model_name}}/config/{{model_name}}_auto_params_{{sota_trial}}.yaml"
+  decisions_log_file:       "artifacts/{{env}}/generated_models/{{model_name}}/logs/auto_mlops/decisions.log"
+  pruning_log_file:         "artifacts/{{env}}/generated_models/{{model_name}}/logs/auto_mlops/pruning.log"
+  exceptions_log_file:      "artifacts/{{env}}/generated_models/{{model_name}}/logs/auto_mlops/exceptions.log"
+  events_jsonl_file:        "artifacts/{{env}}/generated_models/{{model_name}}/logs/auto_mlops/events.jsonl"
+  auto_run_map_benchmark:   "artifacts/{{env}}/benchmark/auto_mlops/"
+  leaderboard_benchmark:    "artifacts/{{env}}/benchmark/auto_mlops/"
+  pareto_front_benchmark:   "artifacts/{{env}}/benchmark/auto_mlops/"
+  auto_trial_registry:      "artifacts/{{env}}/benchmark/auto_mlops/auto_trial_registry.json" #(per-trial lifecycle; keyed by AUTO_MLOPS_TRIAL_ID)
+  auto_hypothesis_registry:  "artifacts/{{env}}/benchmark/auto_mlops/auto_hypothesis_registry.json" #(hypothesis-level stats/state; keyed by AUTO_MLOPS_HYPOTHESIS_ID)
+  auto_sota_registry:       "artifacts/auto_sota_registry.json"    #(global SOTA tracking; single file per project)
+ 
+# ===============================================================
+# GLOBAL VISUALIZATION (open-source only)
+# ===============================================================
+visualization:
+  tensorboard:
+    enabled: true
+    log_dir: "artifacts/{{env}}/generated_models/{{model_name}}/logs/tensorboard"
+    flush_secs: 10
+    record_hparams: true
+    record_model_graph: false
+  static_reports:
+    enabled: true
+    formats: [html, csv, json]
+    include_plots:
+      metrics_curves: true
+      pareto_front: true
+      robustness_matrix: true
+      calibration_optional: true
+
+# ===============================================================
+# GLOBAL SEARCH ENGINE (Optuna-powered)
+# ===============================================================
+search:
+  engine: optuna
+  sampler:
+    name: tpe             # tpe | random | grid | cmaes
+    seed: 42
+    startup_trials: 12
+    multivariate: true
+    group: true
+  pruner:
+    name: asha            # asha | hyperband | none
+    min_resource: 1       # epoch 1 earliest prune check
+    reduction_factor: 3
+    min_early_stopping_rate: 0
+  budget:
+    max_trials: 120
+    parallel_trials: 2
+    max_gpu_hours: 48
+    max_wall_hours: 72
+  trial_naming:
+    pattern: "{{model_tag}}_{{trial_id:04d}}"
+    model_tag_from:
+      - learning.method
+      - model.family
+      - model.generator
+  study: # GLOBAL Search (to make SQLite location deterministic)
+    storage: "sqlite:///artifacts/{{env}}/benchmark/auto_mlops/optuna.db"
+    study_name: "{{mode}}_{{project_name}}"
+    direction_mode: "single_primary"   # or multi_objective later
+# ===============================================================
+# GLOBAL DATA PROFILING (guides hypothesis/budget allocation)
+# ===============================================================
+data_profile:
+  enabled: true
+  cache: true
+  cache_path: "artifacts/{{env}}/benchmark/auto_mlops/dataset_profiles.json"
+  signals:
+    - snr
+    - variance
+    - leakage_locality
+    - desync_sensitivity
+    - temporal_dependency
+    - frequency_signature
+    - class_balance
+
+# ===============================================================
+# GLOBAL OBJECTIVES (true multi-objective)
+# ===============================================================
+objectives:
+  directions:
+    minimize:
+      - guessing_entropy
+      - model_size_params
+      - latency_ms
+    maximize:
+      - {"rank_k_success": {"k": 5}}
+      - mean_rank 
+      - accuracy
+  primary: guessing_entropy
+  tie_breakers:
+    - rank_k_success@5
+    - mean_rank
+    - accuracy
+  pareto:
+    enabled: true
+    export_front: true
+    selection_policy:
+      name: weighted_tchebycheff   # weighted_tchebycheff | epsilon_constraint | knee_point | max_hypervolume
+      weights:
+        guessing_entropy: 0.55
+        rank_k_success@5: 0.30
+        accuracy: 0.15
+
+# ===============================================================
+# GLOBAL CONSTRAINTS (hard gates)
+# ===============================================================
+# constraints:
+#   max_epochs: 100
+#   max_params: 30_000_000
+#   max_latency_ms: 12
+#   max_memory_mb: 8192
+#   disallow_nan: true
+#   min_accuracy_floor: 0.05
+constraints:
+#SSHard vs soft separation
+#SS
+#SShard = prune/abort
+#SSsoft = penalize ranking / deprioritize
+  # ===============================================================
+  # 1) HARD GATES (must never be violated)
+  # ===============================================================
+  hard:
+
+    # ---- training execution limits ----
+    training:
+      max_epochs: 100
+      max_params: 30000000
+      disallow_nan: true
+      min_accuracy_floor: 0.05
+
+    # ---- runtime / systems limits ----
+    system:
+      max_latency_ms: 12
+      max_memory_mb: 8192
+      max_disk_mb: 51200
+
+    # ---- safety / correctness gates ----
+    integrity:
+      disallow_inf: true
+      require_finite_metrics: true
+      abort_on_metric_missing: false   # false = allow metric missing but mark degraded
+
+  # ===============================================================
+  # 2) SOFT CONSTRAINTS (penalize / deprioritize but allow)
+  # ===============================================================
+  soft:
+
+    training:
+      target_epochs: 60
+      prefer_mixed_precision: true
+
+    system:
+      target_latency_ms: 8
+      target_memory_mb: 4096
+
+    # Optional: how strongly soft constraints affect ranking
+    penalty:
+      enabled: true
+      weights:
+        latency_ms: 0.30
+        memory_mb: 0.20
+        params: 0.50
+
+  # ===============================================================
+  # 3) SEARCH / BUDGET LIMITS (stop AutoMLOps itself)
+  # ===============================================================
+  budget:
+    max_trials: 120 #the number of candidate models evaluated by the search algorithm.
+    parallel_trials: 2
+    max_wall_hours: 72
+    max_gpu_hours: 48
+    per_trial:
+      max_wall_minutes: 90
+      max_gpu_minutes: 60
+
+  # ===============================================================
+  # 4) RESOURCE POLICY (scheduler / device constraints)
+  # ===============================================================
+  resources:
+    gpu:
+      allow_multi_gpu: false
+      max_gpus: 1
+      min_vram_mb: 12000
+    cpu:
+      max_workers: 8
+    memory:
+      max_ram_mb: 32768
+
+  # ===============================================================
+  # 5) STAGE OVERRIDES (optional)
+  # Example: test has stricter latency gate
+  # ===============================================================
+  stages:
+    train:
+      hard:
+        system:
+          max_latency_ms: 20
+    test:
+      hard:
+        system:
+          max_latency_ms: 12
+    deploy:
+      hard:
+        system:
+          max_latency_ms: 8
+          max_memory_mb: 4096
+
+# ===============================================================
+# GLOBAL RETENTION / CLEANUP POLICY
+# ===============================================================
+retention:
+
+  # If false: no deletion, only tagging (safe mode)
+  cleanup_enabled: true
+
+  # Safety: never delete these even if policies say otherwise
+  protected_files:
+    - "auto_trial_registry.json"
+    - "auto_hypothesis_registry.json"
+    - "auto_run_map.json"
+    - "leaderboard.csv"
+    - "pareto_front.json"
+
+  keep:
+    promoted: true
+    qualified: true
+    completed: true
+    pruned: true
+    failed: true
+    interrupted: true        # <- new
+    invalid_config: true     # <- new
+    oom: true                # <- new
+    timeout: true            # <- new
+
+  # Default policy used when outcome bucket is missing
+  default_artifact_policy:
+    keep_auto_params: true
+    keep_checkpoints: true
+    keep_weights: true
+    keep_metrics: true
+    keep_decision_trace: true
+    keep_logs: true
+    keep_reports: true
+
+  artifact_policy:
+    pruned:
+      keep_auto_params: false
+      keep_checkpoints: false
+      keep_weights: false
+      keep_metrics: true
+      keep_decision_trace: true
+      keep_logs: true
+      keep_reports: true
+
+    failed:
+      keep_auto_params: false
+      keep_checkpoints: false
+      keep_weights: false
+      keep_metrics: true
+      keep_decision_trace: true
+      keep_logs: true
+      keep_reports: true
+
+    completed_nonqualified:
+      keep_auto_params: true
+      keep_checkpoints: false
+      keep_weights: true
+      keep_metrics: true
+      keep_decision_trace: true
+      keep_logs: true
+      keep_reports: true
+
+    interrupted:
+      keep_auto_params: true
+      keep_checkpoints: true
+      keep_weights: true
+      keep_metrics: true
+      keep_decision_trace: true
+      keep_logs: true
+      keep_reports: true
+
+    oom:
+      keep_auto_params: true
+      keep_checkpoints: false
+      keep_weights: false
+      keep_metrics: true
+      keep_decision_trace: true
+      keep_logs: true
+      keep_reports: true
+
+  # Optional: checkpoint trimming rules (future)
+  checkpoint_policy:
+    enabled: true
+    keep_last_k: 2
+    keep_best: true          # keep checkpoint marked best
+    keep_every_n_epochs: 10  # sparse history
+
+  # Optional: compression rules
+  compression:
+    enabled: false
+    formats: ["gz"]          # or ["zstd"]
+
+
+registry: #for AutoMLOps bookkeeping outputs — i.e., “where do we write the summary of what happened across trials?”
+  auto_run_map: #Creates a single canonical map of all trials with: status (DONE / PRUNED / FAILED / INTERRUPTED)
+    include_metrics_snapshot_epochs: [1, 2, 3, 5]
+    include_prune_reason: true
+    include_exception_trace: true
+  leaderboard: #Creates a ranked view of best trials.
+    top_k: 50
+  pareto_front: #Handles true multi-objective optimization.
+    include_dominated: false
+
+# ===============================================================
+# PROJECTS (like master.yaml)
+# ===============================================================
+project:
+
+  - name: Project_1
+    root: "Project_1/"
+    # auto_mlops.yaml is referenced by master.yaml, so no need to self-reference here.
+
+    # -----------------------------------------------------------
+    # optional overrides per project
+    # -----------------------------------------------------------
+    overrides:
+      search:
+        budget:
+          max_trials: 80
+          parallel_trials: 2
+      constraints:
+        max_epochs: 50
+        max_params: 25_000_000
+
+    # -----------------------------------------------------------
+    # how to distribute trials across hypotheses
+    # -----------------------------------------------------------
+    allocation:
+      policy: profile_weighted   # uniform | profile_weighted | round_robin | adaptive_bandit
+      min_trials_per_hypothesis: 3
+      exploration_fraction: 0.15
+
+    # ===========================================================
+    # HYPOTHESES (implicit scientific experimentation units)
+    # ===========================================================
+    hypotheses:
+
+      # ---------------------------------------------------------
+      # H1: Local hierarchical convolutional bias
+      # ---------------------------------------------------------
+      - hypothesis_id: H1
+        description: "Local hierarchical convolutional structures capture side-channel leakage effectively."
+        learning:
+          method: supervised          # supervised | self_supervised | unsupervised | semi_supervised
+          label_space: key_byte       # key_byte | hw | multilabel | custom
+          loss:
+            type: cross_entropy       # cross_entropy | focal | label_smoothing_ce | contrastive | triplet | mse
+            args:
+              reduction: mean
+              label_smoothing: [0.0, 0.05, 0.1]
+
+        model:
+          family: cnn                 # cnn | transformer | hybrid | rnn | graph
+          generator: yaml_sequential  # yaml_sequential | yaml_graph | named_architecture
+          search_space:
+
+            # --- high-level structural knobs (research level) ---
+            depth: [4, 6, 8, 10]
+            width_scale: [0.5, 1.0, 1.5]
+            block_type: [plain, residual, bottleneck]
+            norm: [batchnorm, layernorm, groupnorm, none]
+            activation: [relu, leaky_relu, prelu]
+            dropout: [0.0, 0.1, 0.2, 0.3]
+
+            # --- convolution design ---
+            kernel_schedule:
+              - [11, 11, 11, 11]
+              - [7, 7, 9, 11]
+              - [5, 7, 9, 11]
+            stride_schedule:
+              - [2, 1, 1, 1]
+              - [2, 2, 1, 1]
+            dilation_schedule:
+              - [1, 1, 1, 1]
+              - [1, 2, 4, 1]
+
+            pooling:
+              type: [avg, max, spectral, adaptive_avg]
+              kernel_size: [2, 4]
+              frequency: [every_block, every_2_blocks]
+              spectral_keep_ratio: [0.4, 0.6, 0.8]
+
+            head:
+              type: [mlp, global_pool_mlp]
+              hidden_dims:
+                - [4096, 4096]
+                - [2048, 2048]
+                - [1024, 1024]
+              final_dim: [256]
+
+        trainer:
+          monitor_metric: guessing_entropy
+          epochs: 50
+          batch_size: [16, 32, 64]
+          loss_reduction: mean
+          early_stopping: true
+          patience: [3, 5, 8]
+          min_delta: [0.0, 0.0005, 0.001]
+
+          optimizer:
+            type: [Adam, AdamW]
+            lr: [1e-5, 3e-5, 1e-4, 3e-4]
+            weight_decay: [1e-6, 1e-5, 1e-4, 1e-3]
+            betas:
+              - [0.9, 0.999]
+              - [0.9, 0.98]
+            eps: [1e-8]
+
+          scheduler:
+            type: [StepLR, CosineAnnealingLR, OneCycleLR]
+            args:
+              StepLR:
+                step_size: [5, 10]
+                gamma: [0.2, 0.4, 0.6]
+              CosineAnnealingLR:
+                T_max: [10, 25, 50]
+              OneCycleLR:
+                max_lr: [1e-4, 3e-4]
+                pct_start: [0.1, 0.3]
+
+          gradient:
+            clip_norm: [0.0, 1.0, 5.0]
+            accumulation_steps: [1, 2, 4]
+            mixed_precision: true
+
+        pruning:
+          rules:
+            - name: nan_guard
+              if_any:
+                - metric: cross_entropy
+                  is_nan: true
+              action: fail
+
+            - name: early_accuracy_floor
+              metric: accuracy
+              at_epoch: 2
+              below: 0.15
+              action: prune
+
+            - name: ge_plateau
+              metric: guessing_entropy
+              window: 3
+              min_improvement: 0.01
+              action: prune
+
+        benchmarking:
+          enabled: true
+          tests:
+            - name: standard_attack
+              enabled: true
+            - name: desync_robustness
+              enabled: true
+              desync_values: [0, 25, 50, 100]
+            - name: noise_robustness
+              enabled: true
+              noise_levels: [0.0, 0.01, 0.02]
+          qualify_thresholds:
+            guessing_entropy_max: 40
+            rank_k_success@5_min: 0.60
+
+      # ---------------------------------------------------------
+      # H2: Long-range dependency (Transformer / Attention bias)
+      # ---------------------------------------------------------
+      - hypothesis_id: H2
+        description: "Long-range dependencies in traces can be effectively modeled using Transformer architectures."
+        learning:
+          method: supervised
+          label_space: key_byte
+          loss:
+            type: cross_entropy
+            args:
+              reduction: mean
+
+        model:
+          family: transformer
+          generator: named_architecture   # build_model supports architecture + arch_params
+          search_space:
+            architecture: [TraceTransformer, TransformerEncoderLayer]
+            arch_params:
+              d_model: [64, 128, 256]
+              num_heads: [4, 8]
+              num_layers: [2, 4, 6]
+              ff_mult: [2, 4]
+              dropout: [0.0, 0.1, 0.2]
+              positional_encoding: [learned, sinusoidal]
+              pooling: [cls_token, mean_pool]
+
+        trainer:
+          monitor_metric: guessing_entropy
+          epochs: 50
+          batch_size: [8, 16, 32]
+          early_stopping: true
+          patience: [3, 5]
+          min_delta: [0.0, 0.001]
+
+          optimizer:
+            type: [AdamW]
+            lr: [5e-5, 1e-4, 3e-4]
+            weight_decay: [1e-6, 1e-4, 1e-3]
+
+          scheduler:
+            type: [CosineAnnealingLR, OneCycleLR]
+            args:
+              CosineAnnealingLR:
+                T_max: [10, 25, 50]
+              OneCycleLR:
+                max_lr: [1e-4, 3e-4]
+                pct_start: [0.1, 0.3]
+
+          gradient:
+            clip_norm: [0.0, 1.0]
+            mixed_precision: true
+
+        pruning:
+          rules:
+            - name: early_loss_explosion
+              metric: cross_entropy
+              at_epoch: 2
+              above: 5.0
+              action: prune
+
+        benchmarking:
+          enabled: true
+          tests:
+            - name: standard_attack
+              enabled: true
+          qualify_thresholds:
+            guessing_entropy_max: 55
+            rank_k_success@5_min: 0.50
+
+      # ---------------------------------------------------------
+      # H3: Transfer / Domain Adaptation (cross-device generalization)
+      # ---------------------------------------------------------
+      - hypothesis_id: H3
+        description: "Leveraging models trained on related devices can improve performance via transfer learning."
+        learning:
+          method: transfer_learning     # transfer_learning | domain_adaptation | continual | meta_learning
+          source:
+            project: Project_0
+            model_selector: promoted_best   # promoted_best | by_name | by_hash
+            freeze:
+              policy: partial
+              layers_regex: ["^layers\\.0", "^layers\\.1"]
+          adaptation:
+            strategy: fine_tune
+            unfreeze_after_epoch: [0, 2, 5]
+
+          loss:
+            type: cross_entropy
+            args:
+              reduction: mean
+
+        model:
+          family: cnn
+          generator: yaml_sequential
+          search_space:
+            depth: [4, 6, 8]
+            width_scale: [1.0, 1.5]
+            block_type: [residual]
+            norm: [batchnorm]
+            activation: [relu]
+            dropout: [0.0, 0.1, 0.2]
+            kernel_schedule:
+              - [7, 7, 9, 11]
+              - [5, 7, 9, 11]
+            pooling:
+              type: [avg, max]
+              kernel_size: [2, 4]
+              frequency: [every_block]
+
+        trainer:
+          monitor_metric: guessing_entropy
+          epochs: 30
+          batch_size: [16, 32, 64]
+          early_stopping: true
+          patience: [3, 5]
+          min_delta: [0.0, 0.001]
+          optimizer:
+            type: [AdamW]
+            lr: [1e-5, 3e-5, 1e-4]
+            weight_decay: [1e-6, 1e-4, 1e-3]
+          scheduler:
+            type: [StepLR]
+            args:
+              StepLR:
+                step_size: [5, 10]
+                gamma: [0.4, 0.6]
+
+        pruning:
+          rules:
+            - name: no_transfer_gain
+              metric: guessing_entropy
+              window: 3
+              min_improvement: 0.005
+              action: prune
+
+        benchmarking:
+          enabled: true
+          tests:
+            - name: cross_device_eval
+              enabled: true
+          qualify_thresholds:
+            guessing_entropy_max: 50
+            rank_k_success@5_min: 0.55
+
+      # ---------------------------------------------------------
+      # H4: Adversarial / Robust Training (security-hardening)
+      # ---------------------------------------------------------
+      - hypothesis_id: H4
+        description: "Incorporating adversarial robustness during training enhances model security against side-channel perturbations."
+        learning:
+          method: adversarial_training
+          adversary:
+            type: trace_perturbation
+            attacks:
+              - jitter
+              - gaussian_noise
+              - amplitude_scaling
+            strength:
+              jitter: [0, 25, 50]
+              gaussian_noise: [0.0, 0.01, 0.02]
+              amplitude_scaling: [0.9, 1.1]
+          loss:
+            type: cross_entropy
+            args:
+              reduction: mean
+
+        model:
+          family: hybrid
+          generator: yaml_graph
+          search_space:
+            graph_templates:
+              - cnn_then_attention
+              - spectral_then_cnn
+            cnn:
+              depth: [4, 6]
+              kernel_size: [7, 11]
+              base_filters: [32, 64]
+            attention:
+              d_model: [64, 128]
+              num_heads: [4, 8]
+              num_layers: [1, 2]
+
+        trainer:
+          monitor_metric: guessing_entropy
+          epochs: 50
+          batch_size: [16, 32]
+          early_stopping: true
+          patience: [3, 5]
+          min_delta: [0.0, 0.001]
+          optimizer:
+            type: [AdamW]
+            lr: [1e-4, 3e-4]
+            weight_decay: [1e-6, 1e-4]
+          scheduler:
+            type: [CosineAnnealingLR]
+            args:
+              CosineAnnealingLR:
+                T_max: [10, 25, 50]
+
+        pruning:
+          rules:
+            - name: robustness_fail_fast
+              metric: rank_k_success@5
+              at_epoch: 3
+              below: 0.20
+              action: prune
+
+        benchmarking:
+          enabled: true
+          tests:
+            - name: desync_robustness
+              enabled: true
+              desync_values: [0, 25, 50, 100]
+            - name: noise_robustness
+              enabled: true
+              noise_levels: [0.0, 0.01, 0.02]
+          qualify_thresholds:
+            guessing_entropy_max: 60
+            rank_k_success@5_min: 0.45
+
+    # ===========================================================
+    # FINAL PROMOTION POLICY (project-level)
+    # ===========================================================
+    promotion:
+      top_k: 5
+      require_qualify: true
+      require_robustness_pass: true
+      export_only_promoted: true
+      export_include:
+        - auto_params
+        - final_weights
+        - metrics
+        - benchmark_reports
+        - leaderboard
+        - pareto_front

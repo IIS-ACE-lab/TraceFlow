@@ -1,0 +1,12 @@
+# services/mlops/config/config_tracking_registry.yaml
+
+
+tracked_files:
+  auto_mlops: services/mlops/config/auto_mlops.yaml
+  meta_mlops: services/mlops/config/meta_mlops.yaml
+
+  # Optional (if you want mlops to introspect core configs)
+  master: services/side_channel_core/config/master.yaml
+
+  # Optional per-project params (only if you want mlops to read them directly)
+  # params_dlsca_ascad: DLSCA_ASCAD/config/params.yaml

@@ -1,0 +1,252 @@
+version: 2.0
+mode: research_upgrade   # research_upgrade | meta_only | mining_only | transfer_only
+
+# ===============================================================
+# GLOBAL PATHS (plugin-owned)
+# ===============================================================
+paths:
+  knowledge_store: "services/mlops/state/knowledge_store.json"
+  priors_store: "services/mlops/state/hypothesis_priors.json"
+  failure_store: "services/mlops/state/failure_theory.json"
+  cross_project_store: "services/mlops/state/cross_project_memory.json"
+
+  # Read v1 outputs (auto_mlops.yaml writes these under artifacts)
+  read_auto_run_map: "artifacts/{{env}}/benchmark/auto_mlops/auto_run_map.json"
+  read_dataset_profiles: "artifacts/{{env}}/benchmark/auto_mlops/dataset_profiles.json"
+
+  # Write upgrade outputs (separate from training logs)
+  upgrade_logs: "artifacts/{{env}}/benchmark/auto_mlops/research_upgrade/logs/"
+  theory_reports: "artifacts/{{env}}/benchmark/auto_mlops/research_upgrade/theory/"
+  meta_dashboards: "artifacts/{{env}}/benchmark/auto_mlops/research_upgrade/dashboard/"
+  exported_priors: "artifacts/{{env}}/benchmark/auto_mlops/research_upgrade/priors.json"
+
+# ===============================================================
+# GLOBAL CONTROLS
+# ===============================================================
+controls:
+  enabled: true
+  run_stage_hooks:
+    pre_run: true
+    post_run: true
+  safety:
+    never_reduce_exploration_below: 0.10
+    keep_failure_evidence: true
+    forbid_destructive_cleanup: true
+
+# ===============================================================
+# META-LEARNING: Learn hypothesis priors across projects
+# ===============================================================
+meta_learning:
+
+  enabled: true
+
+  objective: improve_sample_efficiency   # improve_sample_efficiency | improve_final_sota | robust_generalization
+
+  # What is a "context" used for meta-learning?
+  context_features:
+    - snr
+    - leakage_locality
+    - desync_sensitivity
+    - temporal_dependency
+    - frequency_signature
+    - trace_length
+    - num_classes
+    - device_id_optional
+
+  # How we store "experience"
+  memory:
+    type: episodic
+    max_history_projects: 50
+    decay:
+      type: exponential
+      half_life_projects: 10
+
+  # Convert past outcomes into priors over hypotheses
+  priors:
+    method: bayesian_update         # bayesian_update | softmax_ranking | thompson_sampling
+    initialization: uniform
+    smoothing: 0.05
+
+  # Bandit allocation policy for distributing trial budget
+  allocation:
+    policy: contextual_thompson     # contextual_thompson | ucb | epsilon_greedy | softmax
+    exploration:
+      epsilon: 0.15
+    min_trials_per_hypothesis: 3
+
+  # How priors influence v1 search (auto_mlops.yaml)
+  apply_to_v1:
+    hypothesis_weights: true
+    budget_scaling: true
+    sampler_warmstart: true
+
+# ===============================================================
+# FAILURE → THEORY EXTRACTION (automatic negative-result mining)
+# ===============================================================
+failure_theory:
+
+  enabled: true
+
+  # What counts as "failure evidence"
+  evidence_sources:
+    - pruned_trials
+    - failed_trials
+    - completed_nonqualified_trials
+
+  # Canonical failure taxonomy (extensible)
+  taxonomy:
+    - id: F1
+      name: optimization_instability
+      indicators:
+        - nan_loss
+        - exploding_gradients
+        - diverging_cross_entropy
+
+    - id: F2
+      name: inductive_bias_mismatch
+      indicators:
+        - high_accuracy_low_rankk
+        - low_locality_model_on_high_locality_data
+        - attention_underperforms_on_local_leakage
+
+    - id: F3
+      name: under_capacity
+      indicators:
+        - low_accuracy_plateau
+        - ge_plateau_high
+
+    - id: F4
+      name: over_capacity_overfit
+      indicators:
+        - train_metric_improves_val_degrades
+        - robustness_fail
+
+    - id: F5
+      name: robustness_fragility
+      indicators:
+        - desync_drop
+        - noise_drop
+
+  # Mining rules = how to label failures automatically
+  mining:
+    clustering:
+      enabled: true
+      method: hierarchical          # hierarchical | kmeans | dbscan
+      features:
+        - model_family
+        - hypothesis_id
+        - training_curve_shape
+        - prune_reason
+        - final_metrics
+        - robustness_metrics
+    rule_engine:
+      enabled: true
+      create_theory_notes: true
+      output_format: markdown
+
+  outputs:
+    generate:
+      - failure_matrix
+      - hypothesis_failure_map
+      - top_failure_modes
+      - theory_notes
+
+# ===============================================================
+# CROSS-PROJECT KNOWLEDGE TRANSFER (warm-start + reuse)
+# ===============================================================
+cross_project_transfer:
+
+  enabled: true
+
+  # Define how to choose a "donor model" from prior projects
+  donor_selection:
+    strategy: similarity_weighted_best   # best_overall | similarity_weighted_best | pareto_knee
+    similarity_metric: cosine
+    min_similarity: 0.55
+
+  transfer_modes:
+    - name: weight_warmstart
+      enabled: true
+      when:
+        conditions:
+          - context_similarity_above: 0.70
+      policy:
+        freeze:
+          type: partial
+          layers_regex: ["^layers\\.0", "^layers\\.1"]
+        unfreeze_after_epoch: 2
+
+    - name: architecture_prior
+      enabled: true
+      when:
+        conditions:
+          - context_similarity_above: 0.60
+      policy:
+        seed_hypotheses_from_donor: true
+        seed_model_generator_params: true
+
+    - name: distillation_optional
+      enabled: true
+      when:
+        conditions:
+          - donor_has_high_robustness: true
+      policy:
+        teacher: donor_best
+        student: current_trial
+        temperature: 2.0
+        alpha: 0.5
+
+  apply_to_v1:
+    emit_pretraining_block: true
+    warmstart_trials_fraction: 0.25
+
+# ===============================================================
+# CONFIG SWITCHING POLICY (how mlops chooses v1 vs v2 behaviors)
+# ===============================================================
+switching:
+
+  # The v1 config this upgrade layer augments
+  baseline_config: "services/mlops/config/auto_mlops.yaml"
+
+  # A project can opt into upgrade layer or parts of it
+  per_project:
+    default:
+      meta_learning: true
+      failure_theory: true
+      cross_project_transfer: true
+
+    overrides:
+      - project: Project_1
+        meta_learning: true
+        failure_theory: true
+        cross_project_transfer: true
+
+  # When to activate which stage hooks
+  stage_hooks:
+    pre_run:
+      - dataset_profile_load
+      - hypothesis_priors_compute
+      - budget_allocation_plan
+      - donor_search_optional
+    post_run:
+      - pareto_extract
+      - failure_mining
+      - priors_update
+      - knowledge_store_commit
+      - theory_report_generate
+
+# ===============================================================
+# VISUALIZATION & REPORTING (upgrade layer)
+# ===============================================================
+visualization:
+  dashboards:
+    enabled: true
+    include:
+      - hypothesis_priors_over_time
+      - pareto_front_evolution
+      - failure_mode_heatmap
+      - donor_transfer_effectiveness
+
+  tensorboard:
+    enabled: true
+    log_dir: "artifacts/{{env}}/benchmark/auto_mlops/research_upgrade/tensorboard"

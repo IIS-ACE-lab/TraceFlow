@@ -1,0 +1,6 @@
+# projects/<P>/config/single_runs.yaml
+# RUN SINGLE EXPERIMENT (TraceFlow Monitor): single runs, one `make orchestrate` line each, as a line of
+# experiment_queue.yaml without the BATCH label: ENV, PROJECT (this project), DATASET (a data entry's
+# name in params.yaml), MODEL_ID (a model_id in params.yaml). The panel's Add a single Run writes a line,
+# its menus change it, × removes it, and Start runs it (make orchestrate, in tmux); no run reads this file.
+runs: []

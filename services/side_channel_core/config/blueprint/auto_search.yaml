@@ -1,0 +1,15 @@
+# services/side_channel_core/config/blueprint/auto_search.yaml
+search:
+  engine: "optuna"       # optuna | random
+  method: "bo"           # bo | rs
+
+  budget:
+    max_trials: 20  # int or "auto" (auto: set to 3x the number of search params) #auto calculates the total combination of trials from the params.
+    parallel_trials: 1
+  objective:
+    metric:              # the metric the search optimises, e.g. guessing_entropy (default)
+    direction:           # minimize | maximize (default minimize)
+
+tracking:
+  clearml:
+    enabled: true

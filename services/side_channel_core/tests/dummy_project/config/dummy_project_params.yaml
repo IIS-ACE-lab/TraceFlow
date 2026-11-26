@@ -1,0 +1,147 @@
+data:
+  attack_desync: 0
+  attack_range:
+  - 0
+  - 10000
+  data_split: 0.65:0.25:0.10
+  database: services/side_channel_core/data/ASCAD/ATMEGA_AES_v1/ATM_AES_v1_fixed_key/ASCAD_data/ASCAD_databases/ASCAD.h5
+  debug_h5_inspect: true
+  multilabel: 0
+  name: ascad
+  profiling_desync: 0
+  profiling_range:
+  - 0
+  - 50000
+  target_range:
+  - 0
+  - 700
+device: cuda
+metrics: &id001
+- cross_entropy
+- accuracy
+- guessing_entropy
+- mean_rank
+- variance_rank
+- rank_k_success:
+    k: 5
+- top_k_accuracy:
+    k: 5
+metrics_to_log: *id001
+model:
+  layers:
+  - Conv1d:
+      activation: relu
+      in_channels: 1
+      kernel_size: 11
+      out_channels: 64
+      padding: 5
+      stride: 2
+  - Pooling:
+      dim: 1
+      kernel_size: 2
+      type: avg
+  - Conv1d:
+      activation: relu
+      in_channels: 64
+      kernel_size: 11
+      out_channels: 128
+      padding: 5
+  - Pooling:
+      dim: 1
+      kernel_size: 2
+      type: avg
+  - Conv1d:
+      activation: relu
+      in_channels: 128
+      kernel_size: 11
+      out_channels: 256
+      padding: 5
+  - Pooling:
+      dim: 1
+      kernel_size: 2
+      type: avg
+  - Conv1d:
+      activation: relu
+      in_channels: 256
+      kernel_size: 11
+      out_channels: 512
+      padding: 5
+  - Pooling:
+      dim: 1
+      kernel_size: 2
+      type: avg
+  - Conv1d:
+      activation: relu
+      in_channels: 512
+      kernel_size: 11
+      out_channels: 512
+      padding: 5
+  - Pooling:
+      dim: 1
+      kernel_size: 2
+      type: avg
+  - Flatten: {}
+  - Linear:
+      activation: relu
+      in_features: 5120
+      out_features: 4096
+  - Linear:
+      activation: relu
+      in_features: 4096
+      out_features: 4096
+  - Linear:
+      in_features: 4096
+      out_features: 256
+model_hash: 55a91b02
+model_name: optic_meh
+monitor_interval: 1
+num_workers:
+  train: 0
+  val: 0
+paths:
+  artifacts_root: artifacts/generated_models/{{model_name}}
+  checkpoints: artifacts/generated_models/{{model_name}}/checkpoints
+  data: artifacts/generated_models/{{model_name}}/data
+  data_out: artifacts/generated_models/{{model_name}}/data/{{dataset_alias}}.h5
+  graphs: artifacts/generated_models/{{model_name}}/graphs
+  logs: artifacts/generated_models/{{model_name}}/logs
+  metrics: artifacts/generated_models/{{model_name}}/metrics
+  model_out: artifacts/generated_models/{{model_name}}/model
+  params: config/params.yaml
+  params_out: artifacts/generated_models/{{model_name}}/config/{{model_name}}_params.yaml
+  test_data: artifacts/generated_models/{{model_name}}/data/test.h5
+project:
+  code_dir: src
+  graph: config/graph.yaml
+  logs: artifacts/logs/
+  metrics: artifacts/metrics/
+  models: artifacts/models/
+  name: Project_1
+  params: config/params.yaml
+  root: projects/Project_1
+  scripts:
+    data_loader: src/sca/data_loader.py
+    inference: src/sca/inference.py
+    model: src/core/model.py
+    monitor: src/sca/monitor.py
+    test: src/sca/test.py
+    train: src/sca/train.py
+    validate: src/sca/validate.py
+  use_core_src: true
+seed: 42
+trainer:
+  batch_size: 16
+  early_stopping: true
+  epochs: 10
+  loss_reduction: mean
+  lr: 0.0001
+  min_delta: 0.001
+  monitor_metric: null
+  optimizer: Adam
+  patience: 3
+  scheduler:
+    args:
+      gamma: 0.4
+      step_size: 5
+    type: StepLR
+  weight_decay: 0.001

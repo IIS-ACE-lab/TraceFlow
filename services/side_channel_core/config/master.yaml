@@ -1,0 +1,30 @@
+# services/side_channel_core/config/master.yaml
+# master.yaml → “Which project, which code, which extra configs”
+
+secrets:
+  registry_env_file: "secrets/registry.env"
+  db_env_file: "secrets/db.env"
+
+distributed:
+  enabled: False
+  backend: nccl     # or horovod, or multi_worker
+  ddp_script:      "src/distributed/pytorch_distributed/ddp_training.py"
+
+project:
+
+# Registered databases (services/side_channel_core/utils/dataset_fetch.py) are fetched from their
+# official sources when missing and checked each time a run opens them: a download against its published
+# SHA-256, a converted file against its registered sources and converter. on_mismatch is what a run does
+# with a file in place that no longer matches. refetch: move it aside as <name>.mismatch-<SHA-256 prefix>
+# (never deleted) and fetch or make it again. refuse: stop the run with DATA FAILED and leave the file.
+data_fetch:
+  on_mismatch: refetch
+
+# The read-only status page: the runs on a phone and links to share them (the panel's share icon;
+# services/doc/11_phone_status_share.md). Optional: without this block, or with enabled: false, it is off,
+# e.g. on a server that may not open a port. port: a TCP port the network lets through to this machine (its
+# firewall, or IT for a VPN). The address is found by itself (the one this machine's network or VPN reaches);
+# host: "<address>" chooses another. The panel shows them read-only: change them here.
+status_share:
+  enabled: true
+  port: 8765

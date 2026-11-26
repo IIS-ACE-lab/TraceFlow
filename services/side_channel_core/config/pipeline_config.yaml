@@ -1,0 +1,28 @@
+#services/side_channel_core/config/pipeline_config.yaml
+
+pipeline:
+
+  stages:
+    - name: "build"
+      script: "ci_cd/build.sh"
+      timeout: 60
+
+    - name: "test"
+      script: "ci_cd/test.sh"
+      timeout: 120
+
+    - name: "deploy"
+      script: "ci_cd/deploy.sh"
+      timeout: 120
+
+  environment:
+    - ENV={{ENV}} # automatically set by the pipeline upon user selection
+    - DEBUG=false
+
+  notify:
+    on_success: true
+    on_failure: true
+
+ci_cd:
+  trigger_mode: "cli"  # options: #TODO: ui/cli
+  log_dir: "logs/pipeline_logs"

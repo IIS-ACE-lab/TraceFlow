@@ -1,0 +1,431 @@
+/* services/visualization/vscode_monitor/webview/panel.css
+   Minimalist; every colour from the editor theme. The side bar scrolls when
+   the projects are longer than it. Author: Shraddha Mishra */
+body { font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); color: var(--vscode-foreground); padding: 0 8px 12px; overflow-y: auto; }
+button { font: inherit; color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); border: none; padding: 1px 6px; cursor: pointer; }
+button:hover { background: var(--vscode-button-secondaryHoverBackground); }
+button.link { background: transparent; color: var(--vscode-textLink-foreground); padding: 0; }
+button.link:hover { text-decoration: underline; }
+small, .note { color: var(--vscode-descriptionForeground); }
+.err, .errs { color: var(--vscode-errorForeground); }
+.errs { margin: 4px 0; padding-left: 16px; font-size: 11px; }
+.num { font-variant-numeric: tabular-nums; }
+details { margin: 2px 0; }
+summary { cursor: pointer; padding: 3px 0; }
+details details { padding-left: 4px; }
+details details > summary { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+details details > summary small { text-transform: none; letter-spacing: 0; }
+/* FIGURES' sub-panels, Graphs and Faceting: as written, under the capitals of FIGURES */
+details[data-key^="fg:"] > summary, details[data-key^="ff:"] > summary { text-transform: none; letter-spacing: 0; }
+.project { border-top: 1px solid var(--vscode-panel-border); }
+.project > summary { padding: 6px 0; }
+.project > div { padding-left: 14px; }
+.gpu { padding: 6px 0; }
+.gpu-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11px; }
+.gpu-name { font-weight: 600; }
+.docker { display: flex; align-items: flex-start; gap: 8px; margin-top: 6px; font-size: 11px; }
+.docker-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.spark { vertical-align: middle; flex: none; }
+.spark path { fill: none; stroke: var(--vscode-charts-blue, #3794ff); stroke-width: 1; }
+/* status lights: fixed saturated colours with a thin ring and a soft glow, so green, amber and red stay
+   apart in every theme (the theme's testing/warning colours are muted in some); grey is an unlit lamp */
+.light { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle;
+  background: #8b949e; box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); opacity: .7; }
+.light.green, .dot.alive { background: #22d34a; box-shadow: 0 0 0 1px rgba(0, 0, 0, .35), 0 0 5px rgba(34, 211, 74, .85); opacity: 1; }
+.light.amber { background: #ff9f0a; box-shadow: 0 0 0 1px rgba(0, 0, 0, .35), 0 0 5px rgba(255, 159, 10, .85); opacity: 1; }
+.light.red, .dot.dead { background: #ff3b30; box-shadow: 0 0 0 1px rgba(0, 0, 0, .35), 0 0 5px rgba(255, 59, 48, .85); opacity: 1; }
+.run { padding: 4px 0; }
+.phase { font-size: 11px; }
+.progress { display: flex; align-items: center; gap: 6px; }
+.bar { flex: 1; height: 6px; }
+.bar svg { width: 100%; height: 6px; display: block; }
+.bar .track { fill: var(--vscode-progressBar-background, #0e70c0); opacity: .2; }
+.bar .fill { fill: var(--vscode-progressBar-background, #0e70c0); }
+.pct { font-variant-numeric: tabular-nums; min-width: 3.5em; text-align: right; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px 0; }
+/* Run tiles: the number and its glyph carry the state's colour (VS Code chart colours, tuned per theme);
+   the word uses the theme's text colour on a transparent tile, so both read on any theme. */
+.tile { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 0; min-width: 0;
+        color: var(--vscode-foreground); background: transparent;
+        border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, rgba(128,128,128,.35))); border-radius: 4px; }
+.tile:hover { background: var(--vscode-list-hoverBackground); }
+.tile .count { font-size: 1.35em; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.tile .glyph { margin-right: 4px; font-size: .8em; }
+.tile .word { font-size: 11px; color: var(--vscode-foreground); text-transform: capitalize; }
+.tile.queued .count { color: var(--vscode-charts-yellow, #cca700); }
+.tile.running .count { color: var(--vscode-charts-blue, #3794ff); }
+.tile.done .count { color: var(--vscode-charts-green, #89d185); }
+.tile.failed .count { color: var(--vscode-charts-red, #f14c4c); }
+/* [Done]: each run's validation, all N_val traces | test, first N_val traces | test, all N_test traces; their key under the tiles */
+/* the four ranks in shades of fire: orange, ember (dark orange), dark red, bright red (RANK_KEYS order), legible on
+   paper, every pair told apart by hue or lightness: the P2 reports take them wherever they show these quantities
+   (paper/draft_6/figures/scripts/p2_report_frame.py RANK_COLOURS; owner 2026-10-28: the yellow was illegible) */
+.rk.val { color: #e67300; font-weight: 600; }
+.rk.same { color: #9a4a00; font-weight: 600; }
+.rk.budget { color: #c00000; font-weight: 600; }
+.rk.test { color: #ff0000; font-weight: 600; }
+.rk small { font-weight: 400; opacity: .8; }
+/* [Done] under the tiles: the filter at the left (under [Queued]), the ranks' key at the right */
+.done-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px 12px; margin: -2px 0 4px; }
+.done-bar .rank-legend { margin: 0; }
+.list-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 14px; }
+.done-find { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.done-find .filter-icon { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linejoin: round; opacity: .85; }
+.done-find select { font-size: 11px; max-width: 220px; }
+.done-count { color: var(--vscode-descriptionForeground); }
+.rank-legend { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 2px 14px; font-size: 10px; margin: -2px 0 4px;
+  color: var(--vscode-descriptionForeground); }
+.rank-legend .rk-key { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+.rk-key.val { background: #e67300; }
+.rk-key.same { background: #9a4a00; }
+.rk-key.budget { background: #c00000; }
+.rk-key.test { background: #ff0000; }
+.tile.none .count { opacity: .55; }                              /* nothing in this state */
+.tile.running.some .glyph { display: inline-block; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .tile.running.some .glyph { animation: none; } }
+.tile.sel { outline: 2px solid var(--vscode-focusBorder); outline-offset: -1px; }
+.runs { list-style: none; margin: 2px 0 6px; padding: 0; }
+/* [Queued], [Done], [Failed]: grows with its runs up to the limit, then scrolls */
+.runs.box { max-height: 40vh; overflow-y: auto; padding: 2px 6px;
+            border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, rgba(128,128,128,.35))); border-radius: 4px; }
+.runs li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 1px 0; }
+.runs .end { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+table { border-collapse: collapse; width: 100%; }
+td { padding: 1px 6px 1px 0; font-size: 11px; vertical-align: middle; }
+td.name { max-width: 0; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.acts { white-space: nowrap; text-align: right; }
+td.gids { white-space: nowrap; }
+td.acts button { margin-left: 3px; }
+tr.off { opacity: .5; }
+table.figures td.pick { width: 1px; white-space: nowrap; }
+.figall { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+.figall .delall { margin: 0; }
+table.figures td.pick small { display: inline-block; min-width: 1.2em; }
+.state { font-size: 10px; padding: 0 4px; border: 1px solid currentColor; border-radius: 3px; white-space: nowrap; }
+.state.done { color: var(--vscode-testing-iconPassed, #3fb950); }
+.state.running { color: var(--vscode-progressBar-background, #0e70c0); }
+.state.failed { color: var(--vscode-testing-iconFailed, #f85149); }
+.state.not-started, .state.queued { color: var(--vscode-descriptionForeground); }
+.state.incomplete { color: var(--vscode-charts-yellow, #cca700); }
+.runs li.pending { color: var(--vscode-foreground); }
+.runs li.pending .glyph { color: var(--vscode-charts-yellow, #cca700); }
+.buttons { display: flex; gap: 6px; padding: 4px 0; }
+.kv { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; font-size: 12px; padding: 6px 0; }
+.series td { font-size: 12px; }
+/* A config file inside its section (Experiment Settings): its file name as written (lowercase), a tad smaller
+   and muted until opened, a link-coloured fold arrow, indented: the section's child, not a second section.
+   Run Single Experiment and Master Control are file forms too, but sections themselves. */
+.cfg:not(.single):not(.master) { margin-left: 8px; }
+.cfg:not(.single):not(.master) > summary { font-family: var(--vscode-editor-font-family); font-size: calc(11.5px * 1.1 * 1.05);
+  text-transform: none; letter-spacing: 0; color: var(--vscode-descriptionForeground); }
+.cfg:not(.single):not(.master)[open] > summary { color: var(--vscode-foreground); }
+.cfg:not(.single):not(.master) > summary::marker { color: var(--vscode-textLink-foreground); }
+.form { padding: 2px 0 6px; }
+.node { padding-left: 8px; border-left: 1px solid var(--vscode-tree-indentGuidesStroke, var(--vscode-panel-border)); }
+.node > summary { font-size: 12px; text-transform: none; letter-spacing: 0; }
+.field { display: flex; align-items: center; gap: 6px; padding: 1px 0 1px 8px; font-size: 12px; }
+.field label { flex: 0 0 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vscode-descriptionForeground); }
+.field input.val { flex: 1; min-width: 0; }
+.values { display: flex; flex-wrap: wrap; gap: 3px; flex: 1; min-width: 0; }
+/* a hint under a value (the seed spacing, the attack byte): the label's column empty, the text aligned with the value and wrapping */
+.field.hintrow { padding-top: 0; align-items: flex-start; }
+.field > small.hint { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere; }   /* a hint beside a value (the attack byte): right after it, wrapping */
+.field.hintrow small { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.3; }
+.values .item { display: inline-flex; }
+.values input.val { width: auto; min-width: 2em; max-width: 100%; }
+.values input.add { width: 5em; }
+.field input.add.wide { flex: 1; min-width: 0; }
+button.x { padding: 0 4px; }
+input { font: inherit; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, transparent); padding: 1px 3px; }
+/* Every menu as the Done list's metric menu: the theme's dropdown colours, its open list too (else the
+   browser's white shows through on some systems) */
+select { font: inherit; color: var(--vscode-dropdown-foreground); background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border, transparent); }
+select option, select optgroup { color: var(--vscode-dropdown-foreground);
+  background: var(--vscode-dropdown-listBackground, var(--vscode-dropdown-background)); }
+select:focus { outline: 1px solid var(--vscode-focusBorder); }
+select:disabled { opacity: .6; }
+input:focus { outline: 1px solid var(--vscode-focusBorder); }
+.busy { font-size: 11px; margin: 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.buttons { flex-wrap: wrap; }
+.run-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.run-acts { margin-left: auto; display: inline-flex; gap: 4px; }
+.tile .why { font-size: 10px; color: var(--vscode-descriptionForeground); }
+.readonly { flex: 1; min-width: 0; color: var(--vscode-descriptionForeground); font-family: var(--vscode-editor-font-family); font-size: 11px; overflow-wrap: anywhere; }
+.field.stray label { opacity: .6; text-decoration: line-through; }
+input.bad { border-color: var(--vscode-inputValidation-errorBorder, #f14c4c); color: var(--vscode-errorForeground); }
+table.eta { width: 100%; margin: 4px 0; border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, rgba(128,128,128,.35))); border-radius: 3px; border-collapse: separate; border-spacing: 0; }
+table.eta th, table.eta td { padding: 2px 6px; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.eta th { text-align: left; font-weight: 600; color: var(--vscode-foreground); border-right: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, rgba(128,128,128,.35))); width: 1%; }
+table.eta td + td { border-left: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, rgba(128,128,128,.35))); }
+/* QUEUES and RUN SINGLE EXPERIMENT: the reminder at the right end of their button line, faded */
+.buttons .run-hint { align-self: center; margin-left: auto; padding-left: 8px; font-style: italic; opacity: .6;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* EXPERIMENT SETTINGS: a file's role at the right end of its summary line, faded */
+details.cfg > summary .cfg-role { float: right; margin-left: 8px; font-style: italic; opacity: .6; }
+/* [Running]: a run's latest metrics, one line per metric (its name, then train | validation | test), the
+   fold or refit and epoch above; a dot per value, its legend below */
+.live { margin: 2px 0 4px; }
+/* the head row: source and epoch over the metric names, each process over its values */
+.live-rows tr.live-cols th { font-weight: 600; padding-bottom: 1px; border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, .35)); }
+.live-rows tr.live-cols th.live-col { text-align: right; padding: 0 8px 1px; }
+.live-rows tr.live-cols th + th { border-left: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, .35)); }
+.live-rows tr.live-cols th.live-test { color: #ff8c00; }
+.live-rows { border-collapse: collapse; width: 100%; font-size: 11px; font-variant-numeric: tabular-nums; }
+.live-rows th { text-align: left; font-weight: 400; padding: 0 10px 0 0; white-space: nowrap; width: 1%; }
+.live-rows td { padding: 0 8px; white-space: nowrap; }
+.live-rows td + td { border-left: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, .35)); }   /* the | between processes */
+.live-rows td small { opacity: .75; margin-left: 4px; }
+.live-rows td .num { float: right; }
+/* the test's attacks: a bright orange bar with a glow while they run; the test values so far in orange */
+.live-attack th, .live-attack td { padding-bottom: 2px; }
+.live-attack-bar { display: block; height: 6px; margin-top: 4px; border-radius: 3px; }
+.live-attack-bar svg { width: 100%; height: 6px; display: block; border-radius: 3px; }
+.live-attack-bar .track { fill: #ff8c00; opacity: .2; }
+.live-attack-bar .fill { fill: #ff8c00; }
+.live-attack-bar.running { box-shadow: 0 0 6px 1px rgba(255, 140, 0, .85); }
+.live-attack-count { color: #ff8c00; font-weight: 600; }
+/* the run card's phase line while the test attacks: the bar in the epoch's place */
+.attack-phase { display: flex; align-items: center; gap: 8px; }
+/* the labels in front of the run card's bars, one width: the train and test bars start in one column */
+.bar-label { flex: none; width: 2.8em; font-size: 11px; color: var(--vscode-descriptionForeground); }
+.progress .bar-label { margin-right: 2px; }        /* with the row's 6px gap: the 8px of the test row */
+.attack-phase .live-attack-bar { flex: 1 1 auto; margin-top: 0; }
+.run.finished { opacity: .9; }
+.live-rows td.live-test .num { color: #ff8c00; }
+.live-key { margin-top: 4px; font-size: 11px; }
+.live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-left: 6px; vertical-align: middle; }
+.live-dot.better { background: #22d34a; box-shadow: 0 0 4px rgba(34, 211, 74, .8); }
+.live-dot.worse { background: #ff3b30; box-shadow: 0 0 4px rgba(255, 59, 48, .8); }
+.live-dot.same { background: #8b949e; opacity: .7; }
+/* the key: a clear line under the metrics, room between its items; wraps in a narrow side bar */
+.live-legend { display: flex; flex-wrap: wrap; gap: 3px 22px; margin-top: 6px; font-size: 10px; white-space: nowrap;
+  color: var(--vscode-descriptionForeground); }
+.live-legend .live-dot { margin: 0 5px 0 0; }
+
+/* staged (unsaved) form changes: written to the file only on OK */
+.val.dirty { border-color: var(--vscode-inputValidation-warningBorder, #cca700); background: var(--vscode-inputValidation-warningBackground, rgba(204, 167, 0, 0.12)); }
+.removed .val, .field.removed .val { text-decoration: line-through; opacity: 0.55; }
+/* a value staged for adding (OK writes it): a chip with room around its text and its × (owner 2026-10-27) */
+.item.added { display: inline-flex; align-items: center; gap: 4px; padding: 2px 3px 2px 8px; border-radius: 3px; line-height: 1.4;
+  border: 1px dashed var(--vscode-inputValidation-warningBorder, #cca700);
+  background: var(--vscode-inputValidation-warningBackground, rgba(204, 167, 0, 0.12)); }
+.item.added.wide { margin-right: 4px; }
+.item.added button.x { padding: 0 6px; }
+/* the opened [+] of a value list: a frame on a line of its own, its box wide enough to read what is typed */
+.values .addbox { display: flex; align-items: center; gap: 6px; flex: 1 0 100%; box-sizing: border-box; margin-top: 3px;
+  padding: 3px 4px 3px 6px; border: 1px dashed var(--vscode-inputValidation-warningBorder, #cca700); border-radius: 3px; }
+.values .addbox input.add, .values .addbox select.add { flex: 1; min-width: 0; width: auto; padding: 3px 6px; }
+.values .addbox button.x { padding: 1px 7px; }
+.pending { position: sticky; top: 0; z-index: 1; display: flex; gap: 6px; align-items: center; padding: 4px 6px; margin: 2px 0 6px;
+  background: var(--vscode-inputValidation-warningBackground, rgba(204, 167, 0, 0.12));
+  border: 1px solid var(--vscode-inputValidation-warningBorder, #cca700); border-radius: 3px; }
+.pending span { flex: 1; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+button.danger { color: var(--vscode-errorForeground, #f85149); }
+.snapfilters { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 4px 0; }
+.snapf { display: flex; flex-direction: column; font-size: 0.85em; opacity: 0.9; }
+.snapf input, .snapf select { width: 9em; }
+.snaps { list-style: none; padding-left: 0; margin: 4px 0; }
+.snaps li.snap { padding: 3px 0; border-bottom: 1px solid var(--vscode-panel-border, rgba(128,128,128,.2)); }
+.snaps li.snap.refused { opacity: 0.85; }
+.snap-acts { float: right; }
+.snap-acts button { margin-left: 4px; }
+.reproducing { margin: 4px 0; }
+.delall { display: block; margin: 4px 0; font-weight: 600; }
+.dellist { list-style: none; padding-left: 0; margin: 2px 0 6px; max-height: 260px; overflow-y: auto; }
+.dellist li { padding: 1px 0; }
+.dellist label { cursor: pointer; }
+.docker .build button.small { margin-left: 6px; padding: 0 6px; font-size: 10px; }
+.docker button:disabled { opacity: 0.45; cursor: default; }
+.snapf.wide { flex-basis: 100%; }
+.snapf.wide input { width: 100%; box-sizing: border-box; }
+.tests, .ext-tests { list-style: none; padding-left: 0; margin: 4px 0; }
+.tests > li { padding: 3px 0; border-bottom: 1px solid var(--vscode-widget-border, rgba(128,128,128,.2)); }
+.test-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.test-head .snap-acts { margin-left: auto; }
+.ext-tests { padding-left: 12px; }
+
+.state.in-progress { color: var(--vscode-progressBar-background, #0e70c0); }
+.test-model > details > summary { display: flex; align-items: center; gap: 4px; text-transform: none; letter-spacing: 0; font-size: inherit; }
+.test-model .test-head { flex: 1; min-width: 0; }
+/* Done list → Export to Graph Config */
+.export-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0; }
+select.gexp { max-width: 22em; background: var(--vscode-dropdown-background); color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, transparent); font: inherit; font-size: 0.92em; }
+/* config forms: a key of a known set is a menu */
+.form select.val { background: var(--vscode-dropdown-background); color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, transparent); font: inherit; max-width: 22em; }
+.form select.val.bad { border-color: var(--vscode-inputValidation-errorBorder, #be1100); }
+.form select.add { font: inherit; }
+/* Done list: under a run, its metrics and Export to / Delete from Graph Config */
+.runs li .metric-row { flex-basis: 100%; display: flex; align-items: center; gap: 6px; padding: 0 0 3px 22px; }
+/* facet layout: rows x columns picker (as Word's Insert Table) and one box per cell */
+.facet-table { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+.tp-grid { display: inline-flex; flex-direction: column; gap: 2px; }
+.tp-row { display: flex; gap: 2px; }
+.tp-grid button.tp { width: 14px; height: 14px; padding: 0; min-width: 0; border: 1px solid var(--vscode-panel-border, #888);
+  background: transparent; }
+.tp-grid button.tp.on { background: var(--vscode-button-background); }
+.tp-grid button.tp.hover { background: var(--vscode-button-hoverBackground, var(--vscode-focusBorder)); }
+table.facet-cells td { padding: 2px; }
+table.facet-cells select { max-width: 16em; }
+
+/* graph_config.yaml blocks drawn from graph_manager's keys */
+.faded { opacity: .45; }
+.faded * { cursor: not-allowed; }
+.val.absent { font-style: italic; }
+.fmt { margin: 2px 0 4px 10px; padding-left: 6px; border-left: 2px solid var(--vscode-widget-border, rgba(128,128,128,.35)); }
+.fmt-name { font-weight: 600; font-size: 11px; }
+.field.stray .note { color: var(--vscode-editorWarning-foreground, #d29922); }
+.item.absent { opacity: .7; font-style: italic; }
+/* Grid: Rows [n] Columns [n] under the picker; spans, not labels (a .field label is a fixed 38% column) */
+.tp-size { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 6px; white-space: nowrap; }
+.tp-size-name { font-weight: 600; }
+.tp-dim { display: inline-flex; align-items: center; gap: 4px; }
+.tp-size input { width: 4.5em; }
+.facet-cells td { text-align: left; }
+.facet-cells select { text-align: left; text-align-last: left; }
+.field.arrangement { flex-wrap: wrap; }
+/* helper text: under the box, from its left edge (past the 38% label column), muted */
+.field.help-field { flex-wrap: wrap; }
+.field.help-field small.help { flex: 1 0 100%; padding-left: calc(38% + 6px); box-sizing: border-box; font-size: 11px; opacity: .75; white-space: normal; }
+.field.arrangement .facet-table { flex: 1 0 100%; justify-content: flex-start; }
+/* Done list: every run a drop-down; its line is the summary (as the other lists' rows), with a fold arrow */
+.runs li.done-run { display: block; }
+.runs details.done-run > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; list-style: none;
+  text-transform: none; letter-spacing: 0; font-size: inherit; padding: 1px 0; }
+.runs details.done-run > summary::-webkit-details-marker { display: none; }
+.runs details.done-run > summary::before { content: '▸'; width: 1em; opacity: .7; }
+.runs details.done-run[open] > summary::before { content: '▾'; }
+.runs details.done-run > .metric-row { display: flex; align-items: center; gap: 6px; padding: 2px 0 3px 22px; }
+/* under the run: its Graph sub-panel, the graph_config.yaml jobs that list it, as the GRAPH_CONFIG.YAML form */
+.runs details.rungraph { margin: 0 0 4px 22px; }
+/* a run's Graph sub-panel: [Delete] at the right end of each graph job line */
+.node > summary > .end { float: right; }
+.node > summary > .end button { margin-left: 6px; }
+.figall .danger { margin-left: 4px; }
+
+/* experiment_queue.yaml: a line's fixed words, then its four menus, on one line: the menus shrink to
+   fit; a narrow panel wraps the line */
+.qline { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px 6px; }
+.qline .qfix { flex: 0 0 auto; white-space: nowrap; color: var(--vscode-descriptionForeground); font-family: var(--vscode-editor-font-family); }
+.qline .qkv { display: inline-flex; align-items: center; flex: 0 1 auto; min-width: 0; white-space: nowrap;
+  font-family: var(--vscode-editor-font-family); font-size: 11px; }
+.qline .qkv select { min-width: 3em; max-width: 16em; flex: 0 1 auto; }
+.qline .x { flex: 0 0 auto; }
+/* a single run's line: Start and × at the right end */
+.single-line .end { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+@media (max-width: 420px) { .qline { flex-wrap: wrap; } }
+.field.qadd-row { margin-top: 6px; }
+
+/* graph_config.yaml: export.formats as tick boxes in a row */
+.fmtboxes { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.fmtbox { display: inline-flex; align-items: center; gap: 3px; flex: 0 0 auto !important; color: var(--vscode-foreground) !important; }
+/* a colour: the current one, and Word's palette under it */
+.cpick { display: inline-flex; align-items: center; gap: 4px; }
+.swatch { display: inline-block; vertical-align: middle; border: 1px solid var(--vscode-widget-border, #8888); }
+.cpalette { display: flex; flex-direction: column; gap: 1px; padding: 4px; margin: 2px 0 4px; border: 1px solid var(--vscode-widget-border, #8888);
+  background: var(--vscode-editorWidget-background); width: max-content; }
+.cp-title { font-size: 11px; color: var(--vscode-descriptionForeground); margin: 4px 0 2px; }
+.cp-row { display: flex; gap: 2px; }
+.cp-row.base { margin-bottom: 3px; }
+.cpalette button.cp { padding: 0; border: 1px solid transparent; background: none; min-width: 0; line-height: 0; }
+.cpalette button.cp:hover, .cpalette button.cp.on { border-color: var(--vscode-focusBorder); }
+.cp-auto { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; }
+.cp-morebtn { align-self: flex-start; margin-top: 4px; }
+.cp-morebtn.on { outline: 1px solid var(--vscode-focusBorder); }
+.cpalette button.honey { padding: 2px; margin-top: 4px; background: none; border: none; line-height: 0; cursor: default; }
+.honeycomb polygon { stroke: var(--vscode-editorWidget-background); stroke-width: 1; cursor: pointer; }
+.honeycomb polygon:hover, .honeycomb polygon.on { stroke: var(--vscode-focusBorder); stroke-width: 2; }
+.honeycomb polygon.edge { stroke: #c8c8c8; }
+
+/* a facet's custom legend: the colour and what it draws, engraved, then the entry's label */
+.field.entry-row .entry-tag { flex: 0 0 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field.entry-row input { flex: 1; min-width: 0; }
+
+/* an address: its box, then the folder button at its right end */
+.field .pathpick { flex: 0 0 auto; padding: 1px 4px; line-height: 0; }
+.field .pathpick svg.folder { vertical-align: middle; }
+/* a key's purpose, lighter than its value (trainer.monitor_metric: for early stopping) */
+.field small.note.hint { flex: 0 0 auto; opacity: .75; font-style: italic; }
+
+/* FIND MODEL: a field per row, ticked to make a condition */
+.field.mfrow > input[type=checkbox] { flex: 0 0 auto; }
+.field.mfrow .mf-path { flex: 0 0 34%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field.mfrow.varies .mf-path { color: var(--vscode-foreground); }
+.field.mfrow .mf-vals { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field.mfrow.on { flex-wrap: wrap; }
+.field.mfrow select.mf-op { flex: 0 0 auto; }
+
+/* a model's layers: the line, its output shape, ▲ ▼ × at its right end */
+details.layer > summary .shape { margin-left: 6px; font-family: var(--vscode-editor-font-family); font-size: 11px; color: var(--vscode-descriptionForeground); }
+details.layer.bad > summary { color: var(--vscode-errorForeground); }
+details.layer > summary .end button { padding: 0 4px; }
+.field small.note.hint.err { color: var(--vscode-errorForeground); opacity: 1; }
+
+/* the status page's settings (the title line's button opens them) */
+.share { border: 1px solid var(--vscode-widget-border, rgba(128,128,128,.35)); border-radius: 5px; padding: 6px 8px; margin: 2px 0 8px; font-size: 12px; }
+.share h3 { margin: 0 0 4px; font-size: 13px; }
+.share .serving { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 4px 0; }
+.share .field .lbl { flex: 0 0 38%; color: var(--vscode-descriptionForeground); }
+/* one panel per person: name, date, × at the right end; opened: only their QR code and link */
+.share .people { display: grid; gap: 6px; margin: 6px 0; }
+.share details.person { border: 1px solid var(--vscode-widget-border, rgba(128,128,128,.35)); border-radius: 5px; padding: 4px 8px; }
+.share details.person > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.share details.person > summary small { opacity: .7; }
+.share details.person > summary .x { margin-left: auto; }
+.share .linkrow { display: flex; align-items: flex-start; gap: 6px; }
+/* the link behind words: a hyperlink's look (the address itself is never shown) */
+.share button.link { flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 0; font-size: 12px;
+  text-decoration: underline; color: var(--vscode-textLink-foreground); }
+.share button.link:hover { color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground)); }
+.share button.copy { flex: none; background: none; border: 0; padding: 0 2px; color: var(--vscode-foreground); opacity: .75; }
+.share button.copy:hover { opacity: 1; background: none; color: var(--vscode-focusBorder, #3794ff); }
+/* helper text under a value, across the whole width (not only under the value's column) */
+.field.help-field small.help.full { padding-left: 0; }
+.share .addperson { margin-top: 4px; }
+.share .qr { margin: 6px 0 4px; }
+/* the whole code, quiet zone included, scaled to the box (its viewBox): never cropped */
+.share .qr svg { display: block; width: 200px; max-width: 100%; height: auto; aspect-ratio: 1 / 1; }
+.share-help { margin: 6px 0 0; padding-left: 16px; opacity: .75; font-size: 11px; }
+.share-help ol { margin: 2px 0 0; padding-left: 18px; }
+
+/* EXPERIMENT SETTINGS' key search: a box beside Config folder, a faint search mark inside it, × ends the search */
+.cfgsearch { position: relative; display: inline-flex; align-items: center; gap: 2px; flex: 1 1 140px; min-width: 120px; }
+.cfgsearch .searchicon { position: absolute; left: 6px; opacity: .45; pointer-events: none; }
+.cfgsearch input { flex: 1; min-width: 0; padding-left: 22px; }
+
+/* the blueprint: a block the file lacks (its keys inside, faded as .val.absent) */
+.absentnote { font-style: italic; opacity: .7; }
+
+/* metrics_to_log: the menu of every metric the system records, always shown, and [+] adding the one chosen */
+.mpick { display: inline-flex; gap: 8px; align-items: center; }
+/* a metric's value (top_k_accuracy's k, ...): its box set off from the metric's menu or name, in every row */
+.mopt { margin-left: 12px; white-space: nowrap; }
+.mopt input { margin-left: 4px; }
+
+/* a queue's line to fill (an empty queue) and a line staged for adding */
+.qline.draft { opacity: .85; }
+
+/* the image build bar: kept after the build, coloured by how it ended */
+/* the image build's bar: an SVG track and fill as the run card's bars; full and green when built */
+.build-bar { display: inline-block; width: 120px; height: 8px; vertical-align: middle; }
+.build-bar svg { width: 100%; height: 8px; display: block; }
+.build-bar .track { fill: var(--vscode-progressBar-background, #0e70c0); opacity: .2; }
+.build-bar .fill { fill: var(--vscode-progressBar-background, #0e70c0); }
+.build-bar.build-built .fill { fill: var(--vscode-testing-iconPassed, #3fb950); }
+.build-bar.build-failed .fill, .build-bar.build-killed .fill { fill: var(--vscode-errorForeground, #f85149); }
+.build-bar.build-stopped .fill { fill: var(--vscode-editorWarning-foreground, #d29922); }
+/* the Budget box (owner 2026-10-28): [Test] and the attack_trace_budget entry in the old [Retest Budget] / [Test Budget]
+   button's width (its label, data-size, laid under them unseen) */
+/* on the text line of the buttons beside it (owner 2026-10-28: the Test buttons at one level): the box on their baseline,
+   its button not stretched, the entry as tall as a button (1 px border for the button's 1 px padding) */
+.budget-form { display: inline-grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; vertical-align: baseline;
+  margin-left: 4px; }
+.budget-form.form { padding: 0; }      /* a .form (it stages its entry) without the form's 2 px / 6 px: measured 2 px off */
+.budget-form::after { content: attr(data-size); grid-column: 1 / -1; height: 0; overflow: hidden; visibility: hidden; padding: 0 6px; }
+.budget-form > button { margin: 0; }
+.budget-form > input.budget { width: 100%; min-width: 0; box-sizing: border-box; padding: 0 3px; margin: 0; line-height: inherit; }
+.budget-form > input.budget.dirty { border-color: var(--vscode-inputValidation-warningBorder, #cca700); }

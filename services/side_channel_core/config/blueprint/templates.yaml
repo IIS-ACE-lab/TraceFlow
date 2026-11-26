@@ -1,0 +1,73 @@
+# services/side_channel_core/config/blueprint/templates.yaml
+#
+# One item of each list a project fills itself. A new project's params.yaml starts with `data: []` and
+# `model: []`; the panel's Add a Dataset writes `data` below under the name you give, and a data entry's,
+# model's or optimizer's key the project lacks is drawn from here (with its value and menu).
+# Not copied into projects (layout.SCAFFOLD_FILES); read by the panel (choices.blueprint_forms).
+
+# One data entry. `type` decides the label, the key mode and the keys it takes (sca/dataset_types.py);
+# ready entries for every type: services/doc/TUTORIAL.md §6. The ranges and the database are the
+# dataset's own: until they are filled, a run of the project stops at the config check.
+data:
+  name:                  # free; what DATASET selects
+  attack_trace_budget:   # the traces of one test attack for every run on this entry, e.g. 250 (a paper's figure axis);
+                         # read when a trained run is tested, not part of the run hash; empty: every test trace
+  type:                  # ASCADf | ASCADr | CHES_CTF_2018 | AES_RD | DPAv4 | AES_HD
+  database:              # the registered file, from the repository root
+  profiling_range: []    # rows of Profiling_traces, e.g. [0, 50000]
+  profiling_split:       # the profiling rows a run trains on; joins the run hash when enabled
+    enabled: false       # false: all of profiling_range. true: the part scikit-learn's train_test_split keeps, with
+                         # test_size and shuffle written (not with cross-validation); the held-out part is not read
+    test_size:           # a fraction in (0, 1), rounded up, or a row count, e.g. 0.1
+    shuffle:             # true: a random part; false: the first rows
+    random_state:        # the shuffle's seed, e.g. 0; empty (null): unseeded, a new cut every run (not reproducible)
+  attack_range: []       # rows of Attack_traces, e.g. [0, 10000]
+  validation_range: []   # within attack_range; read without cross-validation, e.g. [0, 2000]
+  test_range: []         # within attack_range, disjoint from validation_range, e.g. [2000, 10000]
+  target_range: []       # the samples the model sees, e.g. the whole trace [0, 700]
+  profiling_desync:      # 0, or a random shift of up to n samples per profiling trace
+  attack_desync:         # 0, or the same for the attack traces
+  trace_normalization:
+    # none | auto (by the stored dtype) | zscore (mean, std, eps) | minmax (min, max, eps) |
+    # per_trace_standard | per_trace_minmax (feature_range) |
+    # fitted (steps: [standard] or [standard, minmax], fitted on the training traces only; feature_range with minmax).
+    # The panel shows the chosen mode's keys and writes them when set; eps (default 1.0e-8) guards zscore and minmax only.
+    mode:
+  generate_data_out:         # true: write the run's data files (data/<name>.h5, train/val/test.h5)
+  debug_h5_inspect: true     # print the source file's layout (false: silent)
+  show_contract: true        # print the data contract (false: silent)
+  require_contract: true     # refuse a generated file without its contract (false: accept it)
+
+# One model: a layer list (Add a Model, Plan a Model) or a graph (nodes / outputs).
+model:
+  model_id:              # unique in the file; what MODEL_ID selects
+  architecture:          # e.g. MLP | CNN
+  architecture_args:
+    strict_graph_args:        # true: unknown arguments are refused
+    layers: []
+
+# One optimizer of trainer.optimizer; its arguments come from deep_learning.<framework>.optimizer_args.
+optimizer:
+  type:                  # a torch.optim / keras.optimizers class: Adam | RMSprop | SGD | Adagrad | Adadelta | ...
+  learning_rate: []      # e.g. [1.0e-3]
+  weight_decay:          # e.g. 0.0
+  scheduler:
+    type:                # none | a torch.optim.lr_scheduler class (pytorch) | a keras.optimizers.schedules class (keras)
+
+# One import of import_config.yaml (model_import.models): the keys of model_import.defaults. A key the
+# import leaves empty is the default's; a key it fills is its own (sca and perform_attack key by key).
+import_model:
+  data:                  # empty: the default's data entry
+  trace_normalization:   # empty: the default's (else the data entry's own)
+  fit_on:                # empty: the default's; profiling | training (a fitted trace_normalization only)
+  sca:
+    leakage_model:       # empty: the default's
+    attack_byte:         # empty: the default's (else the data entry's byte)
+  seed:                  # empty: the default's
+  perform_attack:
+    test:
+      attack_times:          # empty: the default's
+      shuffle:               # empty: the default's
+      attack_distribution:   # empty: the default's
+    attack_step:         # empty: the default's
+    ge_thresholds:       # empty: the default's

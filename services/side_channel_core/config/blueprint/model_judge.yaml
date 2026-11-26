@@ -1,0 +1,44 @@
+# services/side_channel_core/config/blueprint/model_judge.yaml
+model_judge:
+
+  # Relative to projects/<PROJECT>/.
+  output_dir:      # e.g. model_selection/ (-> projects/<project>/model_selection/)
+
+  # Label written into selected_model.yaml.
+  decision: 
+
+  ranking:
+    N_top_candidates: 
+
+    # Processes: train | validation | test | cross_validation.
+    # Select on held-out profiling evidence only (e.g. the mean rank over the
+    # cross-validation folds). Ranking on "test" is allowed but flagged, because it
+    # biases the reported test result of the selected model.
+    primary:
+      process: 
+      metric:            # final GE of the fold-mean rank curve (lower is better)
+
+    tie_breakers:
+      - process: 
+        metric:     # traces until the fold-mean curve reaches GE <= 1
+
+    # Without CV (cross_validation.enabled: false) use instead:
+    #   primary:      {process: validation, metric: guessing_entropy}
+    #   tie_breakers: [{process: validation, metric: traces_to_ge_1}]
+    # and require_processes: [validation, test].
+
+  # Shown in the leaderboard for context; never used for ranking.
+  report_metrics:
+    - {process: , metric: }
+    #- {process: validation, metric: accuracy_mean}
+
+  filters:
+    require_done:                        # train and test finished (artifacts/*_registry.json)
+    require_processes:
+      []
+
+  outputs:
+    latest_selection: 
+    selected_model: 
+    leaderboard: 
+    selected_candidates: 

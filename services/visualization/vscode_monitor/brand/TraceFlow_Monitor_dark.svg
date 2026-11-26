@@ -1,0 +1,435 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1226" height="1072" viewBox="0 0 1226 1072" role="img" aria-label="The TraceFlow Monitor panel: its drop-down sections, numbered, with their legend">
+<title>The TraceFlow Monitor panel</title>
+<style>
+  .bg{fill:#0d1117}.panel{fill:#181818;stroke:#2b2b2b}.bar{fill:#1f1f1f}
+  .sec{fill:none;stroke:#2b2b2b}.card{fill:none;stroke:#3c3c3c}
+  .t{fill:#cccccc}.m{fill:#9d9d9d}.h{fill:#cccccc;font-weight:600}.cap{fill:#cccccc;letter-spacing:.5px}
+  .link{fill:#4daafc}
+  .btn{fill:#313131}.bt{fill:#cccccc}.dt{fill:#f85149}.chev{fill:#c5c5c5}
+  .lead{stroke:#d0d7de;stroke-width:1.6;stroke-dasharray:3 3;fill:none}.guide{stroke:#3c3c3c;stroke-width:1;fill:none}
+  .badge{fill:#2f81f7}.bn{fill:#0d1117;font-weight:700}
+  .lt{fill:#e6edf3;font-weight:600;font-size:12px}.desc{fill:#9da5b4}
+  .grey{fill:#8b949e;opacity:.7}
+  .spark{fill:none;stroke:#4daafc;stroke-width:1.4}.prog{fill:#0078d4}.track{fill:#2b2b2b}
+  .tile{fill:none;stroke:#2b2b2b}.focus{fill:none;stroke:#0078d4;stroke-width:2}
+  .cq{fill:#cca700}.cr{fill:#3794ff}.cd{fill:#89d185}.cf{fill:#f14c4c}
+  .sq{stroke:#cca700}.sr{stroke:#3794ff}.sd{stroke:#89d185}.sf{stroke:#f14c4c}
+  .pill{fill:none;stroke:#0e70c0}.pt{fill:#3794ff}.pn{fill:none;stroke:#9d9d9d}.pf{fill:none;stroke:#f85149}
+  .pd{fill:none;stroke:#89d185}.it{fill:#9d9d9d;font-style:italic}
+  .grid{stroke:#3c3c3c;fill:none}
+  .abar{fill:#181818;stroke:#2b2b2b}.accent{fill:#0078d4}
+  .shc{stroke:#8cc8ff;fill:#8cc8ff}.sh1{stroke:#233447;fill:#233447}.sh2{stroke:#294e79;fill:#294e79}
+  .atrack{fill:#462f13}.ah1{fill:#33240f}.ah2{fill:#804c0d}.okf{fill:#89d185}
+
+  .green{fill:#22d34a;stroke:#000000;stroke-opacity:.35}.amber{fill:#ff9f0a;stroke:#000000;stroke-opacity:.35}
+  .red{fill:#ff3b30;stroke:#000000;stroke-opacity:.35}
+  .better{fill:#22d34a}.worse{fill:#ff3b30}.same{fill:#8b949e;opacity:.7}
+  .atk{fill:#ff8c00;font-weight:600}.ov{fill:#ff8c00}.afill{fill:#ff8c00}
+  text{font-family:-apple-system,"Segoe UI",system-ui,Helvetica,Arial,sans-serif;font-size:12px}
+</style>
+<rect width="1226" height="1072" class="bg"/>
+<rect x="49" y="1" width="660" height="1035" rx="6" class="panel"/>
+<rect x="1" y="1" width="48" height="1035" class="abar"/>
+<rect x="1" y="7" width="2" height="36" class="accent"/>
+<g transform="translate(10,10) scale(1.25)" fill="none" stroke="#E6EDF3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2.5l1.5-4 2 8 2-11 2 10 1.5-4H15"/><path d="M17 7l5 5-5 5"/></g>
+<rect x="49" y="1" width="660" height="30" rx="0" class="bar"/>
+<text x="61" y="20" class="cap" font-size="11" text-anchor="start">TraceFlow Monitor</text>
+<g class="sh1" stroke-linecap="round"><path d="M680.6,16.0 L689.4,10.8 M680.6,16.0 L689.4,21.2" fill="none" stroke-width="7.3"/><circle cx="689.4" cy="10.8" r="5.2" stroke="none"/><circle cx="680.6" cy="16.0" r="5.2" stroke="none"/><circle cx="689.4" cy="21.2" r="5.2" stroke="none"/></g>
+<g class="sh2" stroke-linecap="round"><path d="M680.6,16.0 L689.4,10.8 M680.6,16.0 L689.4,21.2" fill="none" stroke-width="4.7"/><circle cx="689.4" cy="10.8" r="3.9" stroke="none"/><circle cx="680.6" cy="16.0" r="3.9" stroke="none"/><circle cx="689.4" cy="21.2" r="3.9" stroke="none"/></g>
+<g class="shc" stroke-linecap="round"><path d="M680.6,16.0 L689.4,10.8 M680.6,16.0 L689.4,21.2" fill="none" stroke-width="2.1"/><circle cx="689.4" cy="10.8" r="2.6" stroke="none"/><circle cx="680.6" cy="16.0" r="2.6" stroke="none"/><circle cx="689.4" cy="21.2" r="2.6" stroke="none"/></g>
+<text x="61" y="52" class="t" font-size="11" text-anchor="start">GPU0</text>
+<text x="101" y="52" class="t" font-size="11" text-anchor="start">0%</text>
+<path d="M131.0,53.0 L138.7,42.2 L146.3,53.0 L154.0,53.0 L161.7,41.6 L169.3,42.2 L177.0,53.0" class="spark"/>
+<text x="187" y="52" class="t" font-size="11" text-anchor="start">750/32607 MiB</text>
+<path d="M279.0,52.4 L286.7,52.4 L294.3,45.8 L302.0,45.6 L309.7,45.6 L317.3,45.8 L325.0,52.4" class="spark"/>
+<text x="335" y="52" class="t" font-size="11" text-anchor="start">47°C</text>
+<g><rect x="61" y="65" width="111" height="18" rx="2" class="btn"/>
+<text x="116.6" y="78" class="dt" font-size="11" text-anchor="middle">Docker tear down</text>
+</g>
+<text x="180.2" y="78" class="t" font-size="11" text-anchor="start">image built · sidechannel:dev-2564873f1298</text>
+<rect x="413.0" y="70" width="120" height="8" rx="0" class="track"/>
+<rect x="413.0" y="70" width="120" height="8" rx="0" class="okf"/>
+<g opacity="0.45"><rect x="539.0" y="66" width="74" height="16" rx="2" class="btn"/>
+<text x="576.0" y="77" class="dt" font-size="11" text-anchor="middle">Kill build</text>
+</g>
+<circle cx="184.2" cy="96" r="4.5" class="green"/>
+<text x="193.2" y="100" class="t" font-size="11" text-anchor="start">sidechannel: running</text>
+<text x="308.2" y="100" class="m" font-size="10" text-anchor="start">(Up)</text>
+<circle cx="65" cy="124" r="4.5" class="green"/>
+<text x="75" y="128" class="t" font-size="10" text-anchor="start">running here: make experiment ENV=dev PROJECT=ZvW QUEUE=z_fig12_ascad_n100 (+3)</text>
+<text x="61" y="146" class="m" font-size="10" text-anchor="start">build 0.1.6 307719e3ea</text>
+<polygon points="62,163 68,168 62,173" class="chev"/>
+<text x="77" y="172" class="h" text-anchor="start">Master Control</text>
+<text x="177" y="172" class="m" font-size="10" text-anchor="start">master.yaml · read only: a run is ongoing</text>
+<line x1="61" y1="183" x2="697" y2="183" class="guide"/>
+<polygon points="62,193 68,198 62,203" class="chev"/>
+<circle cx="79" cy="198" r="4.5" class="grey"/>
+<text x="89" y="202" class="h" text-anchor="start">DLSCA_ASCAD</text>
+<text x="181" y="202" class="m" font-size="11" text-anchor="start">dev · done</text>
+<line x1="61" y1="213" x2="697" y2="213" class="guide"/>
+<polygon points="61,225 69,225 65,231" class="chev"/>
+<circle cx="79" cy="228" r="4.5" class="green"/>
+<text x="89" y="232" class="h" text-anchor="start">ZvW</text>
+<text x="121" y="232" class="m" font-size="11" text-anchor="start">dev · running · 98%</text>
+<text x="75" y="255" class="m" font-size="10" text-anchor="start">ENV dev, followed from the running run bugger_fantastic</text>
+<rect x="75" y="263" width="152.5" height="40" rx="4" class="tile"/>
+<g opacity="0.55">
+<circle cx="142.75" cy="276" r="4" class="sq" fill="none" stroke-width="1.4"/>
+<text x="156.25" y="282" class="cq" font-size="15" text-anchor="middle">0</text>
+</g>
+<text x="151.25" y="296" class="t" font-size="10" text-anchor="middle">Queued</text>
+<rect x="231.5" y="263" width="152.5" height="40" rx="4" class="tile"/>
+<rect x="232.5" y="264" width="150.5" height="38" rx="3" class="focus"/>
+<g>
+<circle cx="299.25" cy="276" r="4.5" class="sr" fill="none" stroke-width="1.2"/>
+<circle cx="299.25" cy="276" r="2.2" class="cr"/>
+<text x="312.75" y="282" class="cr" font-size="15" text-anchor="middle">1</text>
+</g>
+<text x="307.75" y="296" class="t" font-size="10" text-anchor="middle">Running</text>
+<rect x="388.0" y="263" width="152.5" height="40" rx="4" class="tile"/>
+<g>
+<path d="M451.75,276 L454.75,279 L459.75,272" class="sd" fill="none" stroke-width="1.6"/>
+<text x="469.25" y="282" class="cd" font-size="15" text-anchor="middle">8</text>
+</g>
+<text x="464.25" y="296" class="t" font-size="10" text-anchor="middle">Done</text>
+<rect x="544.5" y="263" width="152.5" height="40" rx="4" class="tile"/>
+<g opacity="0.55">
+<path d="M608.75,272.5 L615.75,279.5 M615.75,272.5 L608.75,279.5" class="sf" fill="none" stroke-width="1.6"/>
+<text x="625.75" y="282" class="cf" font-size="15" text-anchor="middle">0</text>
+</g>
+<text x="620.75" y="296" class="t" font-size="10" text-anchor="middle">Failed</text>
+<circle cx="79" cy="322" r="4" class="green"/>
+<text x="89" y="326" class="link" font-size="11" text-anchor="start">bugger_fantastic</text>
+<text x="187" y="326" class="m" font-size="10" text-anchor="start">Zaid_ASCAD_N100 · ascad_n100_none</text>
+<g><rect x="329.59999999999997" y="335" width="93" height="18" rx="2" class="btn"/>
+<text x="375.9" y="348" class="dt" font-size="11" text-anchor="middle">Terminate Run</text>
+</g>
+<g><rect x="426.2" y="335" width="31" height="18" rx="2" class="btn"/>
+<text x="441.5" y="348" class="bt" font-size="11" text-anchor="middle">Log</text>
+</g>
+<g><rect x="460.8" y="335" width="49" height="18" rx="2" class="btn"/>
+<text x="485.40000000000003" y="348" class="bt" font-size="11" text-anchor="middle">Detach</text>
+</g>
+<g><rect x="514.0" y="335" width="93" height="18" rx="2" class="btn"/>
+<text x="560.3" y="348" class="bt" font-size="11" text-anchor="middle">Container log</text>
+</g>
+<g><rect x="610.6" y="335" width="86" height="18" rx="2" class="btn"/>
+<text x="653.8000000000001" y="348" class="dt" font-size="11" text-anchor="middle">Kill session</text>
+</g>
+<text x="75" y="367" class="m" font-size="10" text-anchor="start">test</text>
+<rect x="106" y="358.5" width="483.6" height="12" rx="6" class="ah1"/>
+<rect x="107.5" y="360" width="480.6" height="9" rx="4.5" class="ah2"/>
+<rect x="109" y="361.5" width="477.6" height="6" rx="3" class="atrack"/>
+<rect x="109" y="361.5" width="157.608" height="6" rx="3" class="afill"/>
+<text x="594.6" y="367" class="atk" font-size="10" text-anchor="start">attack 33 of 100</text>
+<text x="75" y="385" class="m" font-size="10" text-anchor="start">train</text>
+<rect x="109" y="379.5" width="544" height="6" rx="3" class="track"/>
+<rect x="109" y="379.5" width="533.12" height="6" rx="3" class="prog"/>
+<text x="661" y="385" class="t" font-size="10" text-anchor="start">98%</text>
+<rect x="75" y="393" width="622" height="20" rx="3" class="grid"/>
+<line x1="111" y1="393" x2="111" y2="413" class="grid"/>
+<line x1="404.0" y1="393" x2="404.0" y2="413" class="grid"/>
+<text x="81" y="407" class="h" font-size="10" text-anchor="start">ETA</text>
+<text x="117" y="407" class="t" font-size="10" text-anchor="start">run: 23:37 Taipei (in 1 min)</text>
+<text x="410.0" y="407" class="t" font-size="10" text-anchor="start">batch: 23:37 Taipei (in 1 min)</text>
+<text x="75" y="431" class="t" font-size="11" text-anchor="start">queue z_fig12_ascad_n100: 1 of 1 done · trial 1/1</text>
+<text x="75" y="447" class="t" font-size="11" text-anchor="start">tmux session: tf-ZvW</text>
+<text x="75" y="466" class="h" font-size="10" text-anchor="start">epoch 50</text>
+<line x1="75" y1="470" x2="697" y2="470" class="guide"/>
+<line x1="217.5" y1="457" x2="217.5" y2="592" class="guide"/>
+<text x="453.25" y="466" class="h" font-size="10" text-anchor="end">train</text>
+<text x="443.25" y="483" class="t" font-size="10" text-anchor="end">141596</text>
+<circle cx="451.25" cy="479.5" r="3.5" class="same"/>
+<text x="443.25" y="496" class="t" font-size="10" text-anchor="end">0.00001000</text>
+<circle cx="451.25" cy="492.5" r="3.5" class="worse"/>
+<text x="443.25" y="509" class="t" font-size="10" text-anchor="end">0.01887</text>
+<circle cx="451.25" cy="505.5" r="3.5" class="worse"/>
+<text x="443.25" y="522" class="t" font-size="10" text-anchor="end">5.206</text>
+<circle cx="451.25" cy="518.5" r="3.5" class="better"/>
+<line x1="457.2" y1="457" x2="457.2" y2="592" class="guide"/>
+<text x="693.0" y="466" class="h" font-size="10" text-anchor="end">validation</text>
+<text x="683.0" y="509" class="t" font-size="10" text-anchor="end">0.006000</text>
+<circle cx="691.0" cy="505.5" r="3.5" class="worse"/>
+<text x="683.0" y="522" class="t" font-size="10" text-anchor="end">5.362</text>
+<circle cx="691.0" cy="518.5" r="3.5" class="better"/>
+<text x="683.0" y="535" class="t" font-size="10" text-anchor="end">1</text>
+<circle cx="691.0" cy="531.5" r="3.5" class="same"/>
+<text x="683.0" y="548" class="t" font-size="10" text-anchor="end">1</text>
+<circle cx="691.0" cy="544.5" r="3.5" class="same"/>
+<text x="683.0" y="561" class="t" font-size="10" text-anchor="end">1</text>
+<circle cx="691.0" cy="557.5" r="3.5" class="same"/>
+<text x="683.0" y="574" class="t" font-size="10" text-anchor="end">548</text>
+<circle cx="691.0" cy="570.5" r="3.5" class="same"/>
+<text x="683.0" y="587" class="t" font-size="10" text-anchor="end">167.79</text>
+<circle cx="691.0" cy="583.5" r="3.5" class="better"/>
+<text x="75" y="483" class="t" font-size="10" text-anchor="start">trainable_parameters</text>
+<text x="75" y="496" class="t" font-size="10" text-anchor="start">η_t</text>
+<text x="75" y="509" class="t" font-size="10" text-anchor="start">mean_accuracy</text>
+<text x="75" y="522" class="t" font-size="10" text-anchor="start">CrossEntropyLoss</text>
+<text x="75" y="535" class="t" font-size="10" text-anchor="start">mean_attack_rank_curve</text>
+<text x="75" y="548" class="t" font-size="10" text-anchor="start">per_attack_curves</text>
+<text x="75" y="561" class="t" font-size="10" text-anchor="start">final_ranks</text>
+<text x="75" y="574" class="t" font-size="10" text-anchor="start">traces_to_ge_1</text>
+<text x="75" y="587" class="t" font-size="10" text-anchor="start">per_attack_traces_to_ge_1</text>
+<text x="75" y="606" class="t" font-size="10" text-anchor="start">key recovery · validation, epoch 50: recovered · true key rank 1 · top guess 0xE0 · GE 1 · SR@1 1.00</text>
+<circle cx="78" cy="621" r="3" class="better"/>
+<text x="87" y="624" class="m" font-size="10" text-anchor="start">better than the epoch before</text>
+<circle cx="254.0" cy="621" r="3" class="worse"/>
+<text x="263.0" y="624" class="m" font-size="10" text-anchor="start">worse than the epoch before</text>
+<circle cx="425.0" cy="621" r="3" class="same"/>
+<text x="434.0" y="624" class="m" font-size="10" text-anchor="start">unchanged, or the first epoch</text>
+<rect x="75" y="642" width="622" height="142" rx="4" class="sec"/>
+<polygon points="83,651 91,651 87,657" class="chev"/>
+<text x="97" y="658" class="cap" font-size="11" text-anchor="start">QUEUES</text>
+<text x="149.4" y="658" class="m" font-size="10" text-anchor="start">8/26 done</text>
+<g><rect x="85" y="668" width="74" height="18" rx="2" class="btn"/>
+<text x="122.0" y="681" class="bt" font-size="11" text-anchor="middle">Set Params</text>
+</g>
+<g><rect x="163.0" y="668" width="68" height="18" rx="2" class="btn"/>
+<text x="196.9" y="681" class="bt" font-size="11" text-anchor="middle">Set Queue</text>
+</g>
+<text x="687" y="681" class="it" font-size="10" text-anchor="end">Configure parameters correctly before starting the Run</text>
+<text x="87" y="705" class="t" font-size="11" text-anchor="start">z_fig12_ascad_n100</text>
+<rect x="221" y="693" width="56.6" height="18" rx="3" class="pill"/>
+<text x="249.3" y="705.5" class="pt" font-size="10" text-anchor="middle">running</text>
+<text x="311" y="705" class="t" font-size="10" text-anchor="start">1/1</text>
+<text x="343" y="705" class="m" font-size="10" text-anchor="start">1 cmd</text>
+<text x="383" y="705" class="m" font-size="10" text-anchor="start">graph #9</text>
+<g><rect x="555.8" y="692" width="93" height="18" rx="2" class="btn"/>
+<text x="602.0999999999999" y="705" class="dt" font-size="11" text-anchor="middle">Terminate Run</text>
+</g>
+<g><rect x="652.4" y="692" width="31" height="18" rx="2" class="btn"/>
+<text x="667.6999999999999" y="705" class="bt" font-size="11" text-anchor="middle">Log</text>
+</g>
+<text x="87" y="727" class="t" font-size="11" text-anchor="start">z_fig8_ascad_n0</text>
+<rect x="221" y="715" width="39.2" height="18" rx="3" class="pd"/>
+<text x="240.6" y="727.5" class="cd" font-size="10" text-anchor="middle">done</text>
+<text x="311" y="727" class="t" font-size="10" text-anchor="start">1/1</text>
+<text x="343" y="727" class="m" font-size="10" text-anchor="start">1 cmd</text>
+<text x="383" y="727" class="m" font-size="10" text-anchor="start">graph #5, #6</text>
+<g><rect x="508.79999999999995" y="714" width="93" height="18" rx="2" class="btn"/>
+<text x="555.0999999999999" y="727" class="bt" font-size="11" text-anchor="middle">Overlay Graph</text>
+</g>
+<g><rect x="605.4" y="714" width="43" height="18" rx="2" class="btn"/>
+<text x="626.9" y="727" class="bt" font-size="11" text-anchor="middle">Rerun</text>
+</g>
+<g><rect x="652.4" y="714" width="31" height="18" rx="2" class="btn"/>
+<text x="667.6999999999999" y="727" class="bt" font-size="11" text-anchor="middle">Log</text>
+</g>
+<text x="87" y="749" class="t" font-size="11" text-anchor="start">z_fig7_aes_hd</text>
+<rect x="221" y="737" width="39.2" height="18" rx="3" class="pd"/>
+<text x="240.6" y="749.5" class="cd" font-size="10" text-anchor="middle">done</text>
+<text x="311" y="749" class="t" font-size="10" text-anchor="start">1/1</text>
+<text x="343" y="749" class="m" font-size="10" text-anchor="start">1 cmd</text>
+<text x="383" y="749" class="m" font-size="10" text-anchor="start">graph #3</text>
+<g><rect x="605.4" y="736" width="43" height="18" rx="2" class="btn"/>
+<text x="626.9" y="749" class="bt" font-size="11" text-anchor="middle">Rerun</text>
+</g>
+<g><rect x="652.4" y="736" width="31" height="18" rx="2" class="btn"/>
+<text x="667.6999999999999" y="749" class="bt" font-size="11" text-anchor="middle">Log</text>
+</g>
+<text x="87" y="771" class="t" font-size="11" text-anchor="start">w_fig4_ascad</text>
+<rect x="221" y="759" width="79.8" height="18" rx="3" class="pn"/>
+<text x="260.9" y="771.5" class="m" font-size="10" text-anchor="middle">not started</text>
+<text x="311" y="771" class="t" font-size="10" text-anchor="start">0/10</text>
+<text x="343" y="771" class="m" font-size="10" text-anchor="start">1 cmd</text>
+<text x="383" y="771" class="m" font-size="10" text-anchor="start">graph #12</text>
+<g><rect x="605.4" y="758" width="43" height="18" rx="2" class="btn"/>
+<text x="626.9" y="771" class="bt" font-size="11" text-anchor="middle">Start</text>
+</g>
+<g><rect x="652.4" y="758" width="31" height="18" rx="2" class="btn"/>
+<text x="667.6999999999999" y="771" class="bt" font-size="11" text-anchor="middle">Log</text>
+</g>
+<rect x="75" y="790" width="622" height="24" rx="4" class="sec"/>
+<polygon points="84,797 90,802 84,807" class="chev"/>
+<text x="97" y="806" class="cap" font-size="11" text-anchor="start">RUN SINGLE EXPERIMENT</text>
+<text x="260.4" y="806" class="m" font-size="10" text-anchor="start">1 run</text>
+<rect x="75" y="820" width="622" height="24" rx="4" class="sec"/>
+<polygon points="84,827 90,832 84,837" class="chev"/>
+<text x="97" y="836" class="cap" font-size="11" text-anchor="start">FIGURES</text>
+<text x="156.8" y="836" class="m" font-size="10" text-anchor="start">2/14 drawn · 0/1 facets</text>
+<rect x="75" y="850" width="622" height="24" rx="4" class="sec"/>
+<polygon points="84,857 90,862 84,867" class="chev"/>
+<text x="97" y="866" class="cap" font-size="11" text-anchor="start">TESTS</text>
+<text x="142.0" y="866" class="m" font-size="10" text-anchor="start">8 models · 0 external</text>
+<rect x="75" y="880" width="622" height="24" rx="4" class="sec"/>
+<polygon points="84,887 90,892 84,897" class="chev"/>
+<text x="97" y="896" class="cap" font-size="11" text-anchor="start">EXPERIMENT SETTINGS</text>
+<text x="245.6" y="896" class="m" font-size="10" text-anchor="start">10 files</text>
+<rect x="75" y="910" width="622" height="24" rx="4" class="sec"/>
+<polygon points="84,917 90,922 84,927" class="chev"/>
+<text x="97" y="926" class="cap" font-size="11" text-anchor="start">HOUSEKEEPING</text>
+<line x1="65" y1="243" x2="65" y2="934" class="guide"/>
+<polygon points="61,952 69,952 65,958" class="chev"/>
+<text x="77" y="959" class="h" text-anchor="start">SNAPSHOTS</text>
+<text x="161" y="959" class="m" font-size="10" text-anchor="start">reproduce runs from their config snapshots</text>
+<rect x="75" y="970" width="622" height="24" rx="4" class="sec"/>
+<polygon points="84,977 90,982 84,987" class="chev"/>
+<text x="97" y="986" class="cap" font-size="11" text-anchor="start">ZVW</text>
+<text x="127.2" y="986" class="m" font-size="10" text-anchor="start">8 of 8 scanned</text>
+<rect x="75" y="1000" width="622" height="24" rx="4" class="sec"/>
+<polygon points="84,1007 90,1012 84,1017" class="chev"/>
+<text x="97" y="1016" class="cap" font-size="11" text-anchor="start">CUSTOM</text>
+<line x1="703" y1="16" x2="723" y2="16" class="lead"/>
+<circle cx="733" cy="16" r="9" class="badge"/>
+<text x="733" y="20" class="bn" font-size="10" text-anchor="middle">1</text>
+<circle cx="768" cy="15" r="9" class="badge"/>
+<text x="768" y="19" class="bn" font-size="10" text-anchor="middle">1</text>
+<text x="785" y="19" class="lt" text-anchor="start">Share</text>
+<text x="785" y="34" class="desc" font-size="11" text-anchor="start">a read-only status page for any browser, phone included: one link</text>
+<text x="785" y="48" class="desc" font-size="11" text-anchor="start">and QR code per person; × withdraws it (VPN; services/doc guide 11)</text>
+<line x1="703" y1="48" x2="723" y2="48" class="lead"/>
+<circle cx="733" cy="48" r="9" class="badge"/>
+<text x="733" y="52" class="bn" font-size="10" text-anchor="middle">2</text>
+<circle cx="768" cy="71" r="9" class="badge"/>
+<text x="768" y="75" class="bn" font-size="10" text-anchor="middle">2</text>
+<text x="785" y="75" class="lt" text-anchor="start">GPU strip</text>
+<text x="785" y="90" class="desc" font-size="11" text-anchor="start">utilisation · memory · temperature of every GPU, with sparklines</text>
+<line x1="703" y1="83" x2="723" y2="83" class="lead"/>
+<circle cx="733" cy="83" r="9" class="badge"/>
+<text x="733" y="87" class="bn" font-size="10" text-anchor="middle">3</text>
+<circle cx="768" cy="113" r="9" class="badge"/>
+<text x="768" y="117" class="bn" font-size="10" text-anchor="middle">3</text>
+<text x="785" y="117" class="lt" text-anchor="start">Docker row</text>
+<text x="785" y="132" class="desc" font-size="11" text-anchor="start">Docker tear down · the image build and its bar (full once built) · Kill build</text>
+<text x="785" y="146" class="desc" font-size="11" text-anchor="start">(only while building) · container health</text>
+<line x1="703" y1="124" x2="723" y2="124" class="lead"/>
+<circle cx="733" cy="124" r="9" class="badge"/>
+<text x="733" y="128" class="bn" font-size="10" text-anchor="middle">4</text>
+<circle cx="768" cy="169" r="9" class="badge"/>
+<text x="768" y="173" class="bn" font-size="10" text-anchor="middle">4</text>
+<text x="785" y="173" class="lt" text-anchor="start">running here</text>
+<text x="785" y="188" class="desc" font-size="11" text-anchor="start">the experiment on this machine; (+N) counts its other processes;</text>
+<text x="785" y="202" class="desc" font-size="11" text-anchor="start">under it the panel's build: version and panel.js digest</text>
+<line x1="703" y1="168" x2="723" y2="168" class="lead"/>
+<circle cx="733" cy="168" r="9" class="badge"/>
+<text x="733" y="172" class="bn" font-size="10" text-anchor="middle">5</text>
+<circle cx="768" cy="225" r="9" class="badge"/>
+<text x="768" y="229" class="bn" font-size="10" text-anchor="middle">5</text>
+<text x="785" y="229" class="lt" text-anchor="start">Master Control</text>
+<text x="785" y="244" class="desc" font-size="11" text-anchor="start">master.yaml as a form: every project's entry, Add a Project;</text>
+<text x="785" y="258" class="desc" font-size="11" text-anchor="start">read only while a run is ongoing</text>
+<line x1="703" y1="228" x2="723" y2="228" class="lead"/>
+<circle cx="733" cy="228" r="9" class="badge"/>
+<text x="733" y="232" class="bn" font-size="10" text-anchor="middle">6</text>
+<circle cx="768" cy="281" r="9" class="badge"/>
+<text x="768" y="285" class="bn" font-size="10" text-anchor="middle">6</text>
+<text x="785" y="285" class="lt" text-anchor="start">Project section</text>
+<text x="785" y="300" class="desc" font-size="11" text-anchor="start">one per project of master.yaml: light, ENV, status, progress (here ZvW</text>
+<text x="785" y="314" class="desc" font-size="11" text-anchor="start">open, DLSCA_ASCAD closed); the ENV it follows and from where</text>
+<line x1="703" y1="283" x2="723" y2="283" class="lead"/>
+<circle cx="733" cy="283" r="9" class="badge"/>
+<text x="733" y="287" class="bn" font-size="10" text-anchor="middle">7</text>
+<circle cx="768" cy="337" r="9" class="badge"/>
+<text x="768" y="341" class="bn" font-size="10" text-anchor="middle">7</text>
+<text x="785" y="341" class="lt" text-anchor="start">Tiles</text>
+<text x="785" y="356" class="desc" font-size="11" text-anchor="start">Queued · Running · Done · Failed; click one to list its runs; Done: Retest</text>
+<text x="785" y="370" class="desc" font-size="11" text-anchor="start">and three ranks (validation · test at its traces · test at all); Failed: Delete</text>
+<line x1="703" y1="322" x2="723" y2="322" class="lead"/>
+<circle cx="733" cy="322" r="9" class="badge"/>
+<text x="733" y="326" class="bn" font-size="10" text-anchor="middle">8</text>
+<circle cx="768" cy="393" r="9" class="badge"/>
+<text x="768" y="397" class="bn" font-size="10" text-anchor="middle">8</text>
+<text x="785" y="397" class="lt" text-anchor="start">The run card</text>
+<text x="785" y="412" class="desc" font-size="11" text-anchor="start">under [Running], in the run's place; it leaves when the run moves to [Done]:</text>
+<text x="785" y="426" class="desc" font-size="11" text-anchor="start">Terminate Run · Log · Attach · Container log · Kill session</text>
+<line x1="703" y1="364" x2="723" y2="364" class="lead"/>
+<circle cx="733" cy="364" r="9" class="badge"/>
+<text x="733" y="368" class="bn" font-size="10" text-anchor="middle">9</text>
+<circle cx="768" cy="449" r="9" class="badge"/>
+<text x="768" y="453" class="bn" font-size="10" text-anchor="middle">9</text>
+<text x="785" y="453" class="lt" text-anchor="start">While it tests</text>
+<text x="785" y="468" class="desc" font-size="11" text-anchor="start">the orange attack bar, glowing while it runs, in the place of epoch n/N;</text>
+<text x="785" y="482" class="desc" font-size="11" text-anchor="start">the train bar under it, then ETA (run · batch), queue k of n, tmux session</text>
+<line x1="703" y1="523" x2="723" y2="523" class="lead"/>
+<circle cx="733" cy="523" r="9" class="badge"/>
+<text x="733" y="527" class="bn" font-size="10" text-anchor="middle">10</text>
+<circle cx="768" cy="505" r="9" class="badge"/>
+<text x="768" y="509" class="bn" font-size="10" text-anchor="middle">10</text>
+<text x="785" y="509" class="lt" text-anchor="start">Live metrics</text>
+<text x="785" y="524" class="desc" font-size="11" text-anchor="start">the latest epoch per process: train · validation (CV in a fold); a dot: better ·</text>
+<text x="785" y="538" class="desc" font-size="11" text-anchor="start">worse · unchanged than the epoch before; the key-recovery line under them</text>
+<line x1="703" y1="654" x2="723" y2="654" class="lead"/>
+<circle cx="733" cy="654" r="9" class="badge"/>
+<text x="733" y="658" class="bn" font-size="10" text-anchor="middle">11</text>
+<circle cx="768" cy="561" r="9" class="badge"/>
+<text x="768" y="565" class="bn" font-size="10" text-anchor="middle">11</text>
+<text x="785" y="565" class="lt" text-anchor="start">QUEUES</text>
+<text x="785" y="580" class="desc" font-size="11" text-anchor="start">Set Params · Set Queue; per experiment_queue.yaml key: state, done of the</text>
+<text x="785" y="594" class="desc" font-size="11" text-anchor="start">runs it makes, commands, its graph jobs; Start · Terminate Run · Retry Start ·</text>
+<text x="785" y="608" class="desc" font-size="11" text-anchor="start">Rerun · Overlay Graph (a whole study done) · Log</text>
+<line x1="703" y1="802" x2="723" y2="802" class="lead"/>
+<circle cx="733" cy="802" r="9" class="badge"/>
+<text x="733" y="806" class="bn" font-size="10" text-anchor="middle">12</text>
+<circle cx="768" cy="631" r="9" class="badge"/>
+<text x="768" y="635" class="bn" font-size="10" text-anchor="middle">12</text>
+<text x="785" y="635" class="lt" text-anchor="start">RUN SINGLE EXPERIMENT</text>
+<text x="785" y="650" class="desc" font-size="11" text-anchor="start">single_runs.yaml: one make orchestrate per line (ENV, DATASET,</text>
+<text x="785" y="664" class="desc" font-size="11" text-anchor="start">MODEL_ID menus), Start</text>
+<line x1="703" y1="832" x2="723" y2="832" class="lead"/>
+<circle cx="733" cy="832" r="9" class="badge"/>
+<text x="733" y="836" class="bn" font-size="10" text-anchor="middle">13</text>
+<circle cx="768" cy="687" r="9" class="badge"/>
+<text x="768" y="691" class="bn" font-size="10" text-anchor="middle">13</text>
+<text x="785" y="691" class="lt" text-anchor="start">FIGURES</text>
+<text x="785" y="706" class="desc" font-size="11" text-anchor="start">Graphs: Draw · Draw all · Export to Facet · Open · Folder · Delete;</text>
+<text x="785" y="720" class="desc" font-size="11" text-anchor="start">Faceting: the facets of graph_config.yaml, drawn the same way</text>
+<line x1="703" y1="862" x2="723" y2="862" class="lead"/>
+<circle cx="733" cy="862" r="9" class="badge"/>
+<text x="733" y="866" class="bn" font-size="10" text-anchor="middle">14</text>
+<circle cx="768" cy="743" r="9" class="badge"/>
+<text x="768" y="747" class="bn" font-size="10" text-anchor="middle">14</text>
+<text x="785" y="747" class="lt" text-anchor="start">TESTS</text>
+<text x="785" y="762" class="desc" font-size="11" text-anchor="start">external tests of every DONE model (test_config.yaml): Test · Log · Registry</text>
+<line x1="703" y1="892" x2="723" y2="892" class="lead"/>
+<circle cx="733" cy="892" r="9" class="badge"/>
+<text x="733" y="896" class="bn" font-size="10" text-anchor="middle">15</text>
+<circle cx="768" cy="785" r="9" class="badge"/>
+<text x="768" y="789" class="bn" font-size="10" text-anchor="middle">15</text>
+<text x="785" y="789" class="lt" text-anchor="start">EXPERIMENT SETTINGS</text>
+<text x="785" y="804" class="desc" font-size="11" text-anchor="start">every config file of the project as a form, with its role</text>
+<line x1="703" y1="922" x2="723" y2="922" class="lead"/>
+<circle cx="733" cy="922" r="9" class="badge"/>
+<text x="733" y="926" class="bn" font-size="10" text-anchor="middle">16</text>
+<circle cx="768" cy="827" r="9" class="badge"/>
+<text x="768" y="831" class="bn" font-size="10" text-anchor="middle">16</text>
+<text x="785" y="831" class="lt" text-anchor="start">HOUSEKEEPING</text>
+<text x="785" y="846" class="desc" font-size="11" text-anchor="start">filter (ENV … PARAM), tick, DELETE runs: a dry run first</text>
+<line x1="703" y1="955" x2="723" y2="955" class="lead"/>
+<circle cx="733" cy="955" r="9" class="badge"/>
+<text x="733" y="959" class="bn" font-size="10" text-anchor="middle">17</text>
+<circle cx="768" cy="869" r="9" class="badge"/>
+<text x="768" y="873" class="bn" font-size="10" text-anchor="middle">17</text>
+<text x="785" y="873" class="lt" text-anchor="start">SNAPSHOTS</text>
+<text x="785" y="888" class="desc" font-size="11" text-anchor="start">reproduce runs from their config snapshots</text>
+<line x1="703" y1="982" x2="723" y2="982" class="lead"/>
+<circle cx="733" cy="982" r="9" class="badge"/>
+<text x="733" y="986" class="bn" font-size="10" text-anchor="middle">18</text>
+<circle cx="768" cy="911" r="9" class="badge"/>
+<text x="768" y="915" class="bn" font-size="10" text-anchor="middle">18</text>
+<text x="785" y="915" class="lt" text-anchor="start">&lt;project&gt;</text>
+<text x="785" y="930" class="desc" font-size="11" text-anchor="start">Scan with filters · Open · Reproduce (asks where the outputs go)</text>
+<line x1="703" y1="1012" x2="723" y2="1012" class="lead"/>
+<circle cx="733" cy="1012" r="9" class="badge"/>
+<text x="733" y="1016" class="bn" font-size="10" text-anchor="middle">19</text>
+<circle cx="768" cy="953" r="9" class="badge"/>
+<text x="768" y="957" class="bn" font-size="10" text-anchor="middle">19</text>
+<text x="785" y="957" class="lt" text-anchor="start">CUSTOM</text>
+<text x="785" y="972" class="desc" font-size="11" text-anchor="start">Choose folder… · Scan · Open · Reproduce</text>
+<text x="759" y="1001" class="lt" text-anchor="start">Marks</text>
+<polygon points="761,1014 769,1014 765,1020" class="chev"/>
+<polygon points="778,1012 784,1017 778,1022" class="chev"/>
+<text x="855" y="1021" class="desc" font-size="11" text-anchor="start">a drop-down, open / closed (click its title)</text>
+<g><rect x="759" y="1028" width="49" height="16" rx="2" class="btn"/>
+<text x="783.6" y="1039" class="dt" font-size="11" text-anchor="middle">Delete</text>
+</g>
+<text x="855" y="1040" class="desc" font-size="11" text-anchor="start">red label: stops or deletes something, asks first</text>
+<circle cx="763" cy="1057" r="4.5" class="green"/>
+<text x="771" y="1061" class="desc" font-size="11" text-anchor="start">running</text>
+<circle cx="829.0" cy="1057" r="4.5" class="amber"/>
+<text x="837.0" y="1061" class="desc" font-size="11" text-anchor="start">late beat</text>
+<circle cx="907.0" cy="1057" r="4.5" class="red"/>
+<text x="915.0" y="1061" class="desc" font-size="11" text-anchor="start">no beat</text>
+<circle cx="973.0" cy="1057" r="4.5" class="grey"/>
+<text x="981.0" y="1061" class="desc" font-size="11" text-anchor="start">idle, ended</text>
+</svg>

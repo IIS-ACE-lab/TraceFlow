@@ -1,0 +1,38 @@
+{
+  "name": "traceflow-monitor",
+  "displayName": "TraceFlow Monitor",
+  "description": "Watches, configures and launches TraceFlow experiments for every project in master.yaml. Private; never published.",
+  "version": "0.1.6",
+  "publisher": "Shraddha-Mishra",
+  "author": "Shraddha Mishra",
+  "icon": "media/icon.png",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": { "vscode": "^1.100.0" },
+  "main": "./extension.js",
+  "activationEvents": ["onStartupFinished", "onWebviewPanel:traceflow.planner"],
+  "contributes": {
+    "grammars": [
+      { "scopeName": "traceflow.log.arrows", "path": "./syntaxes/traceflow-log-arrows.tmLanguage.json", "injectTo": ["text.log"] }
+    ],
+    "viewsContainers": {
+      "activitybar": [{ "id": "traceflow", "title": "TraceFlow Monitor", "icon": "media/traceflow.svg" }]
+    },
+    "views": {
+      "traceflow": [{ "type": "webview", "id": "traceflow.panel", "name": "TraceFlow Monitor" }]
+    },
+    "commands": [{ "command": "traceflow.share", "category": "TraceFlow",
+      "title": "Status page: a read-only view of the runs in any browser, a desktop's or a phone's (saved to its home screen it opens like an app), and a link with a QR code for each person you share it with",
+      "icon": { "light": "media/share-light.png", "dark": "media/share-dark.png" } }],
+    "menus": { "view/title": [{ "command": "traceflow.share", "when": "view == traceflow.panel", "group": "navigation" }] },
+    "configuration": {
+      "title": "TraceFlow",
+      "properties": {
+        "traceflow.root": { "type": "string", "default": "", "description": "Path to the TraceFlow repository. Empty: the workspace folder that holds services/side_channel_core/config/master.yaml." },
+        "traceflow.env": { "type": "string", "default": "", "description": "Empty (default): follow the commands: the running run's ENV, a queue's ENV= lines, else the latest run's. Set (dev, staging, prod) only to force one." },
+        "traceflow.python": { "type": "string", "default": "", "description": "Interpreter for the panel's helpers. Empty: the sca conda env's python if present, else python3." },
+        "traceflow.pollSeconds": { "type": "number", "default": 2, "minimum": 1, "description": "Seconds between reads of the heartbeat and the run registry." }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "comment": "services/visualization/vscode_monitor/syntaxes/traceflow-log-arrows.tmLanguage.json: in a .log file (VS Code's Log language, text.log), an epoch block's value (a token with a digit) followed by ▲ (better than the epoch before) is traceflow.better.log, one followed by ▼ (worse) traceflow.worse.log, the arrows too; .vscode/settings.json (editor.tokenColorCustomizations) colours them green and red. The file stays plain text (utils/logger.py writes no colour code into it).",
+  "scopeName": "traceflow.log.arrows",
+  "injectionSelector": "L:text.log",
+  "patterns": [
+    { "match": "([^\\s|]*\\d[^\\s|]*)(\\s)(▲)", "captures": { "1": { "name": "traceflow.better.log" }, "3": { "name": "traceflow.better.log" } } },
+    { "match": "([^\\s|]*\\d[^\\s|]*)(\\s)(▼)", "captures": { "1": { "name": "traceflow.worse.log" }, "3": { "name": "traceflow.worse.log" } } },
+    { "match": "▲", "name": "traceflow.better.log" },
+    { "match": "▼", "name": "traceflow.worse.log" }
+  ]
+}

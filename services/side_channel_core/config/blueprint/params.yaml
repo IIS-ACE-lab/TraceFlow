@@ -1,0 +1,312 @@
+# services/side_channel_core/config/blueprint/params.yaml
+#
+# The training configuration of a new project: every key TraceFlow reads, with an empty value.
+# Fill the values (in the TraceFlow panel, Configs -> params.yaml, or here in the project's copy);
+# the commented lines show examples. A YAML list is a sweep: every combination of the lists below
+# is one run (trial), identified by its hash. Keep one value per list for a single run.
+# Datasets, their settings and models that train on them: services/doc/TUTORIAL.md.
+
+# ── FRAMEWORK ─────────────────────────────────────────────────
+# Whose deep-learning functions run (src/core/framework_switch.py). Layers, activations, loss,
+# optimizer and scheduler are named once below; the framework decides whose definition runs:
+#   pytorch  torch.nn, torch.nn.init, torch.optim, torch.optim.lr_scheduler
+#   keras    Keras 3 (keras.layers, keras.initializers, keras.losses, keras.optimizers,
+#            keras.optimizers.schedules) on Keras' torch backend
+# The block joins the run hash. One framework per file: a list is refused (the other framework is another pass).
+deep_learning:
+  framework:          # e.g. pytorch | keras
+
+  pytorch:            # read when framework is pytorch
+    grad_clip_norm:   # empty: no clipping; e.g. 5.0: every optimizer step clips the gradient norm (torch.nn.utils.clip_grad_norm_)
+    # torch.nn.init functions without the trailing underscore: default (the layer's own
+    # reset_parameters) | xavier_uniform | xavier_normal | kaiming_uniform | kaiming_normal |
+    # uniform | normal | trunc_normal | orthogonal | constant | zeros | ones
+    weight_init:      # e.g. xavier_uniform
+    weight_init_args: {}    # the function's own arguments, e.g. {gain: 1.0} or {nonlinearity: relu}
+    bias_init:        # e.g. zeros
+    bias_init_args: {}
+    # torch.optim arguments per trainer.optimizer type, in PyTorch's names; wired into the run's
+    # optimizer (trainer.optimizer then takes no args). A type without an entry gets the defaults.
+    optimizer_args: {}
+      # Adam:    {betas: [0.9, 0.999], eps: 1.0e-8}
+      # RMSprop: {alpha: 0.99, eps: 1.0e-8, momentum: 0.0, centered: false}
+      # SGD:     {momentum: 0.0}
+
+  keras:              # read when framework is keras
+    grad_clip_norm:   # empty: no clipping; e.g. 5.0: the optimizer's global_clipnorm
+    # keras.initializers names: glorot_uniform | glorot_normal | he_uniform | he_normal |
+    # lecun_uniform | lecun_normal | random_normal | random_uniform | truncated_normal |
+    # variance_scaling | orthogonal | zeros | ones | constant | identity. No seed argument:
+    # every initialiser gets its own seed drawn from the run's seed.
+    weight_init:      # e.g. glorot_uniform
+    weight_init_args: {}
+    bias_init:        # e.g. zeros
+    bias_init_args: {}
+    # keras.optimizers arguments per trainer.optimizer type, in Keras 3's names.
+    optimizer_args: {}
+      # Adam:    {beta_1: 0.9, beta_2: 0.999, epsilon: 1.0e-7}
+      # RMSprop: {rho: 0.9, epsilon: 1.0e-7, momentum: 0.0, centered: false}
+
+# ── REPRODUCIBILITY & ENVIRONMENT ─────────────────────────────
+seed:                 # e.g. 42; with cross-validation the refit trains with this seed and the folds with the next n_folds seeds
+device:               # cuda | cpu. A CUDA device that cannot be used fails the run (no CPU fallback)
+num_workers:          # data-loading workers (absent: train 4, val 1)
+  train: 4
+  val: 1
+monitor_interval: 1   # epochs between monitor updates (default)
+dataloader:           # (defaults)
+  pin_memory: true    # true on a GPU
+  persistent_workers: true
+  prefetch_factor: 4  # batches each worker loads ahead (needs num_workers > 0; absent: 4)
+  drop_last_train: true   # true (absent too): every training epoch drops its last incomplete batch, so each epoch has the
+                          # same number of full batches (a step-level schedule counts the same in every loop) and no tiny
+                          # batch (BatchNorm1d refuses a batch of 1); false: the last batch holds the remainder
+
+# ── SIDE-CHANNEL TARGET ───────────────────────────────────────
+sca:
+  # The attacked key byte, 0-based. It applies to every data entry below, and each type limits it:
+  #   ASCADf, ASCADr   2 on ASCAD.h5 and its desync files; raw traces: a byte whose window you verify
+  #   CHES_CTF_2018, AES_RD   0..15        DPAv4   0        AES_HD   11
+  # A byte the selected entry does not allow is refused at load, with the value to set. Empty: the run takes
+  # the one byte its data entry defines (its type within its file's window), as if set here; set it for an
+  # entry that allows several bytes (CHES_CTF_2018, raw traces), or a list to sweep.
+  attack_byte: []     # empty: the data entry's byte; e.g. [2]
+  # The label: ID = the intermediate value (256 classes), HW = its Hamming weight (9), MSB = its
+  # most significant bit (2). The output layer follows it when out_features is "auto".
+  leakage_model: []   # e.g. [ID] or [ID, HW]
+  # ranks: TraceFlow reports 1..256 (rank 1 = recovered); the paper's rank function (Eq. 6) is zero-based, so paper rank 0 == TraceFlow rank 1
+  candidate_ranking:
+    mode: []          # none | all | top_k
+    top_k: []         # e.g. [5] (mode top_k)
+  # Key enumeration (sca/key_enumeration.py): after the attack's ranking, the key candidates are searched
+  # in the order of one mode; not with cross-validation. Only the chosen mode's block is read (the panel
+  # shows that one); comparison runs every mode and reports each.
+  key_enumeration:
+    enabled:          # true | false (default false)
+    mode:              # TODO: needs development (local_hamming | neighbour_sweep | support_weighted | comparison); the rest of key enumeration works
+    stop_on_success:  # false (default): enumerate the whole budget; true: stop at the first candidate that is the key
+    modes:
+      local_hamming:        # top-K anchors, then bounded Hamming-local promotion, then model order
+        top_k: []           # e.g. [1]
+        hamming_radius: []  # e.g. [1]
+        local_budget: []    # e.g. [3]
+      neighbour_sweep:      # each remaining best candidate anchors its own Hamming neighbourhood
+        hamming_radius: []  # e.g. [1]
+      support_weighted:     # candidates corroborated by nearby anchors, weighted by anchor score
+        top_k: []           # e.g. [2]
+        hamming_radius: []  # e.g. [1]
+        local_budget: []    # e.g. [8]
+
+# ── MODEL SELECTION AND CHECKPOINTS ───────────────────────────
+evaluation:
+  validation:
+    checkpointing:    # true: keep the best-validation weights | false: final epoch only
+    judge_log:        # true: one log line per epoch reading train and validation accuracy against chance | false (default). Not hashed
+  test:
+    load_model:       # final_epoch | best_validation (needs checkpointing: true)
+
+cross_validation:
+  # k folds of the profiling traces, each trained from scratch, then a refit on all of them; the
+  # test attacks the attack traces. ASCADr folds are not attacked (perform_attack.validation.
+  # attack_times: 0). OneCycleLR without a length in its args takes each loop's (folds, refit);
+  # CyclicLR and a written OneCycleLR length are refused under cross-validation.
+  enabled:            # true | false
+  n_folds:            # e.g. 10
+  strategy:           # k_fold | stratified_k_fold
+  shuffle:            # true: shuffle the traces (with seed) before building the folds
+  report_aggregate:   # true: write the cross-validation diagnostics (never change refit or test)
+  partition_seed:     # empty: the folds take seed. A number (e.g. 7): their own seed, so a seed sweep
+                      # keeps the folds and varies only the training (init, batch order); a list of
+                      # values varies only the folds. Needs shuffle: true; in the model_hash when set.
+  refit:
+    enabled:          # empty or true: the final training on all profiling traces. false: the CV results only,
+                      # no model to test (perform_attack.test.attack_times must then be 0). Not part of the model_hash.
+
+# ── ATTACKS ───────────────────────────────────────────────────
+perform_attack:       # (defaults)
+  enabled: true
+  # Per process: attack_times (0 = not attacked), shuffle, attack_distribution:
+  #   full_population  every attack uses all traces of the process, reordered when shuffled; the
+  #                    curve is the mean over the orders
+  #   disjoint         the traces are split into attack_times independent attacks (attack_times
+  #                    must divide them)
+  # The traces of one test attack in a Budget test: the data entry's attack_trace_budget (data[]).
+  # e.g. test: {attack_times: 100, shuffle: true, attack_distribution: full_population}
+  validation:         # the cross-validation folds, or validation_range without cross-validation
+    attack_times: 1
+    shuffle: false
+    attack_distribution: full_population   # full_population | disjoint
+  test:               # test_range of the attack traces; attack_times 0 skips the test
+    attack_times: 1
+    shuffle: false
+    attack_distribution: full_population   # full_population | disjoint
+  attack_step: [1]    # a rank point every n traces (paired with validation.rank_step); 1 (absent too) records every trace
+  ge_thresholds: 1    # the rank(s) counted as key recovery: 1 (absent too), or a list [1, 5] (traces_to_ge_1, traces_to_ge_5)
+
+validation:           # (defaults)
+  rank_eval_interval: 1   # rank metrics every k epochs
+  rank_step: [1]      # keep equal to perform_attack.attack_step (one trace grid)
+
+key_recovery_reporting:   # (defaults)
+  enabled: true
+  log_validation: true    # the validation key-recovery block in the log
+  log_test: true
+  save_validation_reports: true   # metrics/key_recovery/validation_history.jsonl, validation_best.json
+  save_test_report: true  # metrics/key_recovery/test.json
+  recovery_rank: 1
+  require_stable_recovery: true   # recovered only when the rank stays at recovery_rank
+  top_k_candidates: 5
+  include_score_margin: true
+  key_display: full       # full | masked | none
+
+# ── DATASETS ──────────────────────────────────────────────────
+# One entry per database; DATASET=<name> (make orchestrate, or the panel) selects one. `type`
+# decides the label, the key mode and the keys an entry takes; a wrong or missing key is refused
+# at load. Types: ASCADf | ASCADr | CHES_CTF_2018 | AES_RD | DPAv4 | AES_HD. A registered database
+# is fetched (and converted) on first use. Every type, with a ready entry: services/doc/TUTORIAL.md §6.
+#   - name: dpav4
+#     type: DPAv4
+#     database: "services/side_channel_core/data/DPAv4/DPAv4_data/DPAv4.h5"
+#     profiling_range: [0, 4500]
+#     attack_range: [0, 500]
+#     validation_range: [0, 100]
+#     test_range: [100, 500]
+#     target_range: [0, 4000]
+#     trace_normalization: {mode: fitted, steps: [standard]}
+# A new project has none: Add a Dataset (the panel) writes an entry here under the name you give, with the
+# keys to fill (services/side_channel_core/config/blueprint/templates.yaml).
+data: []
+
+metrics_cfg:                 # the numeric constants of the metrics (DLSCA_ASCAD's; none is a study's choice)
+  ce_eps: 1.0e-12            # numerical safety for cross-entropy from probabilities
+  rank_log_eps: 1.0e-40      # numerical safety for the log-likelihood rank computation
+  preds_are_probs: false     # false: the model outputs logits, softmax applied for the attack
+  lm_enabled: false          # true computes Lm (first-round S-box targets only)
+  strict_prob_check: true    # refuse rows that are not probabilities
+  prob_atol: 1.0e-3          # tolerance of the probability row-sum check
+  prob_rtol: 1.0e-3          # tolerance of the probability row-sum check
+
+# ── MODELS ────────────────────────────────────────────────────
+# One block per model; MODEL_ID=<model_id> selects one. Layer and activation names are neutral:
+# deep_learning.framework decides whose definition they mean (Linear -> torch.nn.Linear |
+# keras.layers.Dense, Conv1d, BatchNorm1d, Pooling {type: max|avg}, Flatten, Dropout, ...).
+# The first layer's input size is the target_range length; out_features "auto" follows
+# sca.leakage_model. A graph model gives nodes/outputs instead of layers.
+#   - model_id: "MLP_example"
+#     architecture: "MLP"
+#     architecture_args:
+#       strict_graph_args: true
+#       layers:
+#         - Flatten: {}
+#         - Linear: {in_features: 700, out_features: 200, activation: "relu"}
+#         - Linear: {in_features: 200, out_features: "auto"}
+# A new project has none: Add a Model or Plan a Model (the panel) writes a model here under its model_id.
+model: []
+
+# ── TRAINING ──────────────────────────────────────────────────
+trainer:
+  # Early stopping: the validation metric watched every epoch (its direction follows the metric), and
+  # when training stops. monitor_metric is also the metric best-validation checkpointing picks by
+  # (evaluation.validation.checkpointing). Not with cross-validation (the folds train to the last epoch).
+  early_stopping:
+    enabled:          # true | false (default false)
+    monitor_metric:   # e.g. guessing_entropy: a metric of metrics_to_log recorded on validation
+    patience:         # epochs without improvement before training stops (read with enabled: true; default 3)
+    min_delta:        # the least change that counts as an improvement (read with enabled: true; default 0.0)
+  epochs: []          # e.g. [100]
+  batch_size: []      # e.g. [200]
+  # The training loop
+  precision:          # fp32 | tf32 | default
+  loss:
+    type:             # CrossEntropyLoss | NLLLoss (pytorch only)
+    args:
+      reduction:      # mean | sum
+      from_logits:    # true = cross-entropy of the logits; false = of the softmax, clipped
+                      # (keras.losses.CategoricalCrossentropy; pytorch takes only true)
+      label_smoothing:   # e.g. 0.0
+  # One entry per optimizer; its arguments come from deep_learning.<framework>.optimizer_args.
+  #   - type: Adam
+  #     learning_rate: [1.0e-3]
+  #     weight_decay: 0.0
+  #     scheduler: {type: OneCycleLR, args: {max_lr: 0.01}}   # pytorch; length = trainer.epochs x batches of each loop
+  optimizer:
+    - type:           # a torch.optim / keras.optimizers class: Adam | RMSprop | SGD | Adagrad | Adadelta | ...
+      learning_rate: []    # e.g. [1.0e-3]
+      weight_decay:        # e.g. 0.0
+      scheduler:
+        type:              # none | a torch.optim.lr_scheduler class (pytorch) | a keras.optimizers.schedules class (keras)
+  evaluation:
+    output_transformation:
+      type:           # Softmax: the model's logits to probabilities for the attack and the metrics
+      args:
+        dim:          # the class axis of the output, [batch, classes]: 1 (default)
+
+# ── METRICS ───────────────────────────────────────────────────
+# Recorded per epoch and process; every metric listed joins the run hash. Scalars go to the
+# *_history.jsonl rows, curves to .npy files. A name the code does not know stops the run at its
+# first evaluation (Unsupported metric). Processes: tr train, va validation, te test. A curve
+# cannot be trainer.monitor_metric; the monitor is a scalar metric recorded on va.
+# Classification:
+#   - cross_entropy                          # [tr va te]
+#   - accuracy                               # [tr va te] tr: the running accuracy of the epoch's training passes (Keras fit's acc)
+#   - mean_accuracy                          # [tr va te] tr: the running accuracy of the epoch's training passes; with cross-validation also the mean over the folds
+#   - { top_k_accuracy: { k: 5 } }           # [tr va te] column top_5_accuracy (top_5_accuracy alone: k 5)
+# Training loop:
+#   - fit_time_s                             # [tr va] also fit_time_h, fit_time_per_epoch; spelt fit_time_{s} too
+#   - mean_fit_time_s                        # [tr va] mean over the folds; also mean_fit_time_h, mean_fit_time_per_epoch
+#   - trainable_parameters                   # [tr] the model's trainable weights
+#   - η_t                                    # [tr] the learning rate at iteration or epoch t: the epoch's last step's (a schedule's record)
+#   - training_objective                     # [tr] the loss trainer.loss defines, mean over the epoch's passes
+#   - validation_objective                   # [va] the same loss over the held-out traces; loss_type names it
+# Rank of one attack, [va te]:
+#   - key_rank
+#   - mean_rank                              # also median_rank, variance_rank
+#   - normalized_mean_rank                   # also normalized_variance_rank
+#   - full_ranks                             # curve
+#   - { rank_percentile: { p: 50 } }         # column rank_50_percentile
+#   - { rank_k_success: { k: 1 } }           # column rank_k_success@1: 1 when the final rank <= k
+#   - { time_to_recover: { k: 1 } }          # first trace count with rank <= k
+#   - { rank_at_traces: { traces: 2000 } }   # column rank@2000
+#   - { ge_reduction_rate: { window: 5 } }   # GE slope over this many points
+# Repeated attacks, [va te]:
+#   - guessing_entropy                       # also spelt ge, final_ge
+#   - mean_attack_rank_curve                 # curve; needed with cross-validation
+#   - per_attack_curves                      # every attack's rank curve (median and spread from them)
+#   - final_ranks
+#   - success_rate
+#   - { sr_curve: { k: 1 } }                 # curve; also spelt success_rate_curve
+#   - auc_ge                                 # also spelt auc_guessing_entropy
+#   - { auc_sr: { k: 1 } }                   # also spelt auc_success_rate
+#   - { ge_at_traces: { traces: 2000 } }     # column ge@2000
+#   - traces_to_ge_1
+#   - { traces_to_ge_k: { k: 1 } }           # traces until GE stays at k
+#   - traces_to_sr_1
+# Leakage distribution difference, [va te]; first-round S-box target and fixed key only
+# (ASCADf, CHES_CTF_2018, AES_RD; not ASCADr, DPAv4, AES_HD):
+#   - LDD                                    # curve
+#   - Lm
+metrics_to_log: []
+
+# ── RUN & ARTIFACT PATHS ──────────────────────────────────────
+# Inside the project folder; {{env}}, {{model_name}} and {{dataset_alias}} are filled per run.
+# The standard layout, every run in its own folder (the one every project uses; edit here, not in the panel):
+paths:
+  artifacts_root: "artifacts/{{env}}/generated_models/{{model_name}}"
+  data_out: "artifacts/{{env}}/generated_models/{{model_name}}/data/{{dataset_alias}}.h5"
+  test_data: "artifacts/{{env}}/generated_models/{{model_name}}/data/test.h5"
+  model_out: "artifacts/{{env}}/generated_models/{{model_name}}/model"
+  logs: "artifacts/{{env}}/generated_models/{{model_name}}/logs"
+  model_graphs: "artifacts/{{env}}/generated_models/{{model_name}}/graphs"
+  checkpoints: "artifacts/{{env}}/generated_models/{{model_name}}/checkpoints"
+  params_out: "artifacts/{{env}}/generated_models/{{model_name}}/config/{{model_name}}_params.yaml"
+  device: "artifacts/{{env}}/generated_models/{{model_name}}"   # folder of device.yaml (GPU, library versions, code commit); not config/
+  data: "artifacts/{{env}}/generated_models/{{model_name}}/data"
+  metrics: "artifacts/{{env}}/generated_models/{{model_name}}/metrics/attack_metrics"
+  cross_validation: "artifacts/{{env}}/generated_models/{{model_name}}/cross_validation"
+  key_recovery: "artifacts/{{env}}/generated_models/{{model_name}}/metrics/key_recovery"
+  test: "artifacts/{{env}}/generated_models/{{model_name}}/test"
+  generated_models: "artifacts/{{env}}/generated_models"
+  tmux_logs: "artifacts/{{env}}/tmux_logs"
+  model_preview: "artifacts/{{env}}/model_preview"   # the planner's Download writes model diagrams here, then copies them into each matching run's model_out
+  params: "config/params.yaml"
+  graphs: "graphs"

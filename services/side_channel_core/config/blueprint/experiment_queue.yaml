@@ -1,0 +1,23 @@
+# services/side_channel_core/config/blueprint/experiment_queue.yaml
+#
+# Experiment queues: one key per queue, each a list of commands that `make experiment` (or the
+# panel, Queues -> Start) runs one after another, in the order listed.
+#
+#   make experiment ENV=dev PROJECT=<project> QUEUE=<key>            # run, or resume
+#   make experiment ENV=dev PROJECT=<project> QUEUE=<key> FORCE=1    # train every run again
+#
+# Every command reads config/params.yaml as it is when the command starts: set the lists a queue
+# needs (epochs, batch size, sca.attack_byte, metrics_to_log, ...) before starting it. A queue
+# can mix datasets only when they share those settings (DPAv4 needs sca.attack_byte [0], AES_HD
+# [11]: services/doc/TUTORIAL.md §4.1). Do not write FORCE=, BATCH= or BATCH_ID= here:
+# `make experiment` adds them. Every run of a queue is labelled with the queue name
+# (run_registry.json `batches`), so `make find_model` with `path: batches, contains: <key>`
+# finds its runs. For example:
+#
+#   baseline:
+#     - make orchestrate ENV=dev PROJECT=<project> DATASET=<data name> MODEL_ID=<model_id>
+#     - make orchestrate ENV=dev PROJECT=<project> DATASET=<data name> MODEL_ID=<other model_id>
+#
+# A new project has none: the panel's Add a Queue writes one (you name it) with a line to fill.
+
+{}

@@ -1,0 +1,24 @@
+# services/side_channel_core/infra/environment/requirements.yaml
+#
+# Conda spec of the host `sca` environment (Python 3.12, same as the
+# training image). The pip block installs the pins of requirements.txt and
+# PyTorch 2.9.1 for CUDA 12.8 from the PyTorch index.
+#
+#   conda env create -f services/side_channel_core/infra/environment/requirements.yaml
+#
+# setup_sca_env.sh installs the same environment step by step.
+name: sca
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - -r requirements.txt
+      - --extra-index-url https://download.pytorch.org/whl/cu128
+      - torch==2.9.1+cu128
+      - torchvision==0.24.1+cu128
+      - torchaudio==2.9.1+cu128
+variables:
+  KERAS_BACKEND: torch   # as in the training image; core/framework_switch.py also sets it

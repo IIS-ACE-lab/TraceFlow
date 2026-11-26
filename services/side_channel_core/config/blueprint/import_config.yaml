@@ -1,0 +1,79 @@
+# services/side_channel_core/config/blueprint/import_config.yaml
+#
+# Model import: test models other studies released, through TraceFlow's own test. Nothing trains.
+#
+#   make import ENV=dev PROJECT=<project>                     # every model listed below
+#   make import ENV=dev PROJECT=<project> MODEL=name_a,name_b # these imports only
+#   make import ENV=dev PROJECT=<project> FORCE=1             # import (and test) DONE ones again
+#
+# (panel: params.yaml -> model -> Import a Model adds an entry here). params.yaml is not touched: it
+# holds the training recipe. Each file below becomes one run (status DONE when its test is done, like
+# a trained run), in the project's run registry with model_id imported (MODEL_ID=imported selects them):
+#
+#   1. make import reads the file with h5py (never loads it to register it): its SHA-256 (checked against
+#      sha256 when given), its layer list, Keras version and backend. A Lambda layer (Python code) or a
+#      layer class TraceFlow cannot map is refused. The layer list becomes a TraceFlow model entry
+#      (deep_learning.framework: keras); the released file's SHA-256 joins the run's model_hash.
+#   2. In the run: TraceFlow builds that model, copies the released weights into it (a Dense layer after
+#      a Flatten gets its rows reordered: Keras flattens channels-last, TraceFlow channels-first), and
+#      the equality gate compares both models' class probabilities on every test trace; a difference
+#      beyond 1e-5 (+ 1e-3 relative) fails the import and publishes nothing. The sealed checkpoint and
+#      <run>/model/<run>_import.json (source, SHA-256, gate) are written, then the standard test runs:
+#      metrics, key recovery, per-attack curves, test_registry.json.
+#
+# Read from the file: the architecture, the weights, the input length (it must equal the data entry's
+# target_range) and the output width (256 suggests sca.leakage_model ID, 9 HW: write it below).
+# Given here: the file and its source, the data entry, the preprocessing, the leakage model, the seed.
+#
+# Formats: a Keras HDF5 file (.h5, .hdf5, or Zaid et al.'s extensionless files), converted automatically;
+# a PyTorch state dict (format: torch_state_dict, read with torch.load(weights_only=True)) with its
+# TraceFlow model entry under model:, whose tensors are copied in order (the gate then checks only that
+# every tensor arrived: a state dict holds no network to compare with). ONNX is not supported.
+# The file must sit inside the project folder (the run's container sees projects/ only), e.g.
+# released/<study>/.
+#
+# Loaded through master.yaml -> project -> extra_configs.import (else config/import_config.yaml).
+
+model_import:
+  # Every import's settings unless it sets its own (sca and perform_attack key by key):
+  defaults:
+    data:                  # the name of one of the project's data entries (params.yaml data)
+    trace_normalization:   # the preprocessing the released model expects, as a data entry's
+                           # trace_normalization, e.g. {mode: fitted, steps: [standard, minmax],
+                           # feature_range: [0, 1]}; empty: the data entry's own
+    fit_on:                # a fitted trace_normalization: training (the entry's training split; empty
+                           # too) | profiling (every profiling trace of the entry, before any split)
+    sca:
+      leakage_model:       # the labels the released model predicts: ID | HW | MSB (required)
+      attack_byte:         # empty: the data entry's byte
+    seed:                  # the test's attack orders and tie-breaks: a number, or null (unseeded; required)
+    perform_attack:        # the test's attack, as an external test sets it (test_config.yaml); a key left
+      test:                # empty: params.yaml's perform_attack.test
+        attack_times:      # e.g. 100
+        shuffle:           # true | false
+        attack_distribution:   # full_population | disjoint
+      attack_step:         # a rank point every n traces, e.g. 1
+      ge_thresholds:       # e.g. 1
+  # One entry per released model. Its own keys are those of defaults: a key it leaves empty (or lacks) is the
+  # default's; a key it fills is its own (sca and perform_attack key by key). One file: file (+ sha256);
+  # several: files, each file beside its own SHA-256, one run each, named <name>_0, <name>_1, ...
+  models: []
+  # models:
+  #   - name: zaid_ascad_n0                 # the run's name (empty: a generated one)
+  #     file: released/zaid/ASCAD_desync0   # relative to the project folder
+  #     sha256:                             # the published SHA-256, checked
+  #     # or several files, one run each:
+  #     # files:
+  #     #   - {file: released/w/model_0.hdf5, sha256: <hex>}
+  #     #   - {file: released/w/model_1.hdf5, sha256: <hex>}
+  #     source: "Zaid et al. TCHES 2020(1), github.com/gabzai/Methodology-for-efficient-CNN-architectures-in-SCA @ ece9760"
+  #     format:                             # empty: keras_h5 (read from the file) | torch_state_dict
+  #     model:                              # torch_state_dict only: the TraceFlow model entry
+  #     data: ascad_n0_fs01
+  #     fit_on: profiling
+  #     sca: {leakage_model: ID}
+  #     seed: 0
+  #     perform_attack:                     # empty keys: the defaults'
+  #       test: {attack_times:, shuffle:, attack_distribution:}
+  #       attack_step:
+  #       ge_thresholds:

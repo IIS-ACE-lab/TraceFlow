@@ -1,0 +1,2 @@
+<!-- services/visualization/vscode_monitor/brand/traceflow.svg: the TraceFlow mark in the text colour of where it is shown (currentColor); also the VS Code Activity Bar icon -->
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2.5l1.5-4 2 8 2-11 2 10 1.5-4H15"/><path d="M17 7l5 5-5 5"/></svg>

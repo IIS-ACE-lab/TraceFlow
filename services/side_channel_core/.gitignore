@@ -1,0 +1,43 @@
+# ========= Python bytecode / caches =========
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ========= Caches / temp =========
+.cache/
+tmp/
+**/tmp/
+services/side_channel_core/.cache/
+
+# ========= Logs =========
+logs/
+*.log
+*.pid
+services/side_channel_core/logs/
+
+# ========= Virtualenvs =========
+venv/
+.venv/
+env/
+
+# ========= Local env config =========
+.env
+*.env
+
+# ========= Jupyter =========
+.ipynb_checkpoints/
+
+# ========= OS trash =========
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ========= IDE configs =========
+.vscode/
+.idea/
+
+# ========= Artifacts / benchmarks =========
+Project_1/artifacts/
+Project_1/benchmark/

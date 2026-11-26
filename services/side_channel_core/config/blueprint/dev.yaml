@@ -1,0 +1,14 @@
+# services/side_channel_core/config/blueprint/dev.yaml
+#
+# Overrides for ENV=dev (master.yaml env_configs.dev), deep-merged over params.yaml when a command
+# runs with ENV=dev, key by key.
+# Only a key params.yaml (or the project's extra configs) has, and only a key given a value, is
+# overridden: an empty key overrides nothing (0 and false are values), and a key params.yaml does
+# not have fails the run with ConfigError (utils/config_loader.apply_env_overrides).
+# For example, short runs while developing:
+#
+#   trainer:
+#     epochs: [2]
+#     batch_size: [64]
+
+trainer: {}
